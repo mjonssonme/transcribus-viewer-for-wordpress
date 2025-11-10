@@ -1,7 +1,7 @@
 === Transcribus Viewer for WordPress ===
-Contributors: mattiasjohnsson
+Contributors: Mattias Johnsson
 Author: Mattias Johnsson
-Author URI: https://mjonsson.me
+Author URI: https://github.com/mjonssonme/transcribus-viewer-for-wordpress
 Requires at least: 6.0
 Tested up to: 6.5
 Requires PHP: 7.4
