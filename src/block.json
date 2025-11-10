@@ -1,0 +1,19 @@
+{
+  "$schema": "https://schemas.wordpress.org/wp/trunk/block.json",
+  "apiVersion": 3,
+  "name": "tvwp/document-viewer",
+  "version": "1.0.0",
+  "title": "Transcribus Document",
+  "category": "embed",
+  "icon": "media-document",
+  "description": "Embed an interactive Transkribus document viewer.",
+  "attributes": {
+    "documentId": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./index.css",
+  "style": "file:./style-index.css"
+}

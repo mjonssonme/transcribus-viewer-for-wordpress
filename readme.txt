@@ -1,11 +1,11 @@
 === Transcribus Viewer for WordPress ===
-Contributors: Mattias Johnsson
+Contributors: mattiasjohnsson
 Author: Mattias Johnsson
-Author URI: https://github.com/mjonssonme/transcribus-viewer-for-wordpress
+Author URI: https://mjonsson.me
 Requires at least: 6.0
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 1.0.1
+Stable tag: 1.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -13,18 +13,27 @@ Uploads Transkribus exports (ZIP) and displays them in an interactive, line-by-l
 
 == Description ==
 
-This plugin provides a full-featured system for importing Transkribus documents into WordPress. It creates a 'transkribus_document' post type, includes an async background uploader to handle large ZIP files, and provides a beautiful, interactive frontend viewer.
+This plugin provides a full-featured system for importing Transkribus documents into WordPress. It creates a 'transkribus_document' post type, includes an async background uploader, and provides two ways to display the viewer:
 
-The viewer displays the transcribed page image and the transcribed text side-by-side, with line-level highlighting that syncs between both panes.
+1.  Directly on the document's own page.
+2.  Embedded in any post or page using a custom "Transcribus Document" Gutenberg block.
+
+The viewer displays the document's description followed by the interactive image and text panes.
 
 == Installation ==
 
 1.  Upload the `transcribus-viewer-for-wordpress` folder to your `/wp-content/plugins/` directory.
 2.  Install the 'Action Scheduler' library in `/includes/lib/`.
-3.  Activate the plugin through the 'Plugins' menu in WordPress.
-4.  Navigate to "Transkribus Docs" > "User Guide" for next steps.
+3.  In the plugin's root folder, run `npm install` and then `npm run build` to build the Gutenberg block assets.
+4.  Activate the plugin through the 'Plugins' menu in WordPress.
+5.  Navigate to "Transkribus Docs" > "User Guide" for next steps.
 
 == Changelog ==
+
+= 1.2.0 =
+* Feat: Added a custom "Transkribus Document" Gutenberg block for easy embedding in any post or page.
+* Feat: The block editor now shows a live, interactive preview of the viewer.
+* Fix: Refactored JavaScript initialization to support both the frontend and editor preview.
 
 = 1.0.1 =
 * Feat: Import document description from metadata.xml as placeholder content.

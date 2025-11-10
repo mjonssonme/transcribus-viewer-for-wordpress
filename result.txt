@@ -1,0 +1,77 @@
+
+> tvwp-blocks@1.0.0 build
+> wp-scripts build
+
+assets by status 13.1 KiB [cached] 5 assets
+Entrypoint index = ./style-index.css ./style-index-rtl.css index.js index.asset.php
+orphan modules 4.78 KiB (javascript) 937 bytes (runtime) [orphan] 11 modules
+runtime modules 3.06 KiB 5 modules
+built modules 834 bytes (javascript) 1.45 KiB (css/mini-extract) [built]
+  ./src/index.js + 3 modules 795 bytes [not cacheable] [built] [code generated]
+  ./src/edit.js 39 bytes [built] [code generated] [1 error]
+  css ./node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[3].use[1]!./node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[3].use[2]!./node_modules/sass-loader/dist/cjs.js??ruleSet[1].rules[3].use[3]!./src/style.scss 1.45 KiB [built] [code generated]
+
+LOG from ./node_modules/sass-loader/dist/cjs.js sass-loader ./node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[3].use[1]!./node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[3].use[2]!./node_modules/sass-loader/dist/cjs.js??ruleSet[1].rules[3].use[3]!./src/style.scss
+<w> Deprecation The legacy JS API is deprecated and will be removed in Dart Sass 2.0.0.
+<w> 
+<w> More info: https://sass-lang.com/d/legacy-js-api
+<w> 
+<w> null
+
+ERROR in ./src/edit.js
+Module build failed (from ./node_modules/babel-loader/lib/index.js):
+SyntaxError: /Users/mattias.johnsson/Local Sites/transkribus-publishing/app/public/wp-content/plugins/transcribus-viewer-for-wordpress/src/edit.js: Missing initializer in destructuring declaration. (22:29)
+
+  20 |     );
+  21 |
+> 22 | 	const { posts, hasResolved }_ = useSelect(
+     | 	                            ^
+  23 | 		( select ) => {
+  24 | 			return {
+  25 | 				posts: select( 'core' ).getEntityRecords(
+    at constructor (/Users/mattias.johnsson/Local Sites/transkribus-publishing/app/public/wp-content/plugins/transcribus-viewer-for-wordpress/node_modules/@babel/parser/lib/index.js:367:19)
+    at JSXParserMixin.raise (/Users/mattias.johnsson/Local Sites/transkribus-publishing/app/public/wp-content/plugins/transcribus-viewer-for-wordpress/node_modules/@babel/parser/lib/index.js:6624:19)
+    at JSXParserMixin.parseVar (/Users/mattias.johnsson/Local Sites/transkribus-publishing/app/public/wp-content/plugins/transcribus-viewer-for-wordpress/node_modules/@babel/parser/lib/index.js:13463:16)
+    at JSXParserMixin.parseVarStatement (/Users/mattias.johnsson/Local Sites/transkribus-publishing/app/public/wp-content/plugins/transcribus-viewer-for-wordpress/node_modules/@babel/parser/lib/index.js:13306:10)
+    at JSXParserMixin.parseStatementContent (/Users/mattias.johnsson/Local Sites/transkribus-publishing/app/public/wp-content/plugins/transcribus-viewer-for-wordpress/node_modules/@babel/parser/lib/index.js:12927:23)
+    at JSXParserMixin.parseStatementLike (/Users/mattias.johnsson/Local Sites/transkribus-publishing/app/public/wp-content/plugins/transcribus-viewer-for-wordpress/node_modules/@babel/parser/lib/index.js:12843:17)
+    at JSXParserMixin.parseStatementListItem (/Users/mattias.johnsson/Local Sites/transkribus-publishing/app/public/wp-content/plugins/transcribus-viewer-for-wordpress/node_modules/@babel/parser/lib/index.js:12823:17)
+    at JSXParserMixin.parseBlockOrModuleBlockBody (/Users/mattias.johnsson/Local Sites/transkribus-publishing/app/public/wp-content/plugins/transcribus-viewer-for-wordpress/node_modules/@babel/parser/lib/index.js:13392:61)
+    at JSXParserMixin.parseBlockBody (/Users/mattias.johnsson/Local Sites/transkribus-publishing/app/public/wp-content/plugins/transcribus-viewer-for-wordpress/node_modules/@babel/parser/lib/index.js:13385:10)
+    at JSXParserMixin.parseBlock (/Users/mattias.johnsson/Local Sites/transkribus-publishing/app/public/wp-content/plugins/transcribus-viewer-for-wordpress/node_modules/@babel/parser/lib/index.js:13373:10)
+    at JSXParserMixin.parseFunctionBody (/Users/mattias.johnsson/Local Sites/transkribus-publishing/app/public/wp-content/plugins/transcribus-viewer-for-wordpress/node_modules/@babel/parser/lib/index.js:12174:24)
+    at JSXParserMixin.parseFunctionBodyAndFinish (/Users/mattias.johnsson/Local Sites/transkribus-publishing/app/public/wp-content/plugins/transcribus-viewer-for-wordpress/node_modules/@babel/parser/lib/index.js:12160:10)
+    at /Users/mattias.johnsson/Local Sites/transkribus-publishing/app/public/wp-content/plugins/transcribus-viewer-for-wordpress/node_modules/@babel/parser/lib/index.js:13521:12
+    at JSXParserMixin.withSmartMixTopicForbiddingContext (/Users/mattias.johnsson/Local Sites/transkribus-publishing/app/public/wp-content/plugins/transcribus-viewer-for-wordpress/node_modules/@babel/parser/lib/index.js:12477:14)
+    at JSXParserMixin.parseFunction (/Users/mattias.johnsson/Local Sites/transkribus-publishing/app/public/wp-content/plugins/transcribus-viewer-for-wordpress/node_modules/@babel/parser/lib/index.js:13520:10)
+    at JSXParserMixin.parseExportDefaultExpression (/Users/mattias.johnsson/Local Sites/transkribus-publishing/app/public/wp-content/plugins/transcribus-viewer-for-wordpress/node_modules/@babel/parser/lib/index.js:13983:19)
+    at JSXParserMixin.parseExport (/Users/mattias.johnsson/Local Sites/transkribus-publishing/app/public/wp-content/plugins/transcribus-viewer-for-wordpress/node_modules/@babel/parser/lib/index.js:13904:25)
+    at JSXParserMixin.parseStatementContent (/Users/mattias.johnsson/Local Sites/transkribus-publishing/app/public/wp-content/plugins/transcribus-viewer-for-wordpress/node_modules/@babel/parser/lib/index.js:12954:27)
+    at JSXParserMixin.parseStatementLike (/Users/mattias.johnsson/Local Sites/transkribus-publishing/app/public/wp-content/plugins/transcribus-viewer-for-wordpress/node_modules/@babel/parser/lib/index.js:12843:17)
+    at JSXParserMixin.parseModuleItem (/Users/mattias.johnsson/Local Sites/transkribus-publishing/app/public/wp-content/plugins/transcribus-viewer-for-wordpress/node_modules/@babel/parser/lib/index.js:12820:17)
+    at JSXParserMixin.parseBlockOrModuleBlockBody (/Users/mattias.johnsson/Local Sites/transkribus-publishing/app/public/wp-content/plugins/transcribus-viewer-for-wordpress/node_modules/@babel/parser/lib/index.js:13392:36)
+    at JSXParserMixin.parseBlockBody (/Users/mattias.johnsson/Local Sites/transkribus-publishing/app/public/wp-content/plugins/transcribus-viewer-for-wordpress/node_modules/@babel/parser/lib/index.js:13385:10)
+    at JSXParserMixin.parseProgram (/Users/mattias.johnsson/Local Sites/transkribus-publishing/app/public/wp-content/plugins/transcribus-viewer-for-wordpress/node_modules/@babel/parser/lib/index.js:12698:10)
+    at JSXParserMixin.parseTopLevel (/Users/mattias.johnsson/Local Sites/transkribus-publishing/app/public/wp-content/plugins/transcribus-viewer-for-wordpress/node_modules/@babel/parser/lib/index.js:12688:25)
+    at JSXParserMixin.parse (/Users/mattias.johnsson/Local Sites/transkribus-publishing/app/public/wp-content/plugins/transcribus-viewer-for-wordpress/node_modules/@babel/parser/lib/index.js:14568:25)
+    at parse (/Users/mattias.johnsson/Local Sites/transkribus-publishing/app/public/wp-content/plugins/transcribus-viewer-for-wordpress/node_modules/@babel/parser/lib/index.js:14602:38)
+    at parser (/Users/mattias.johnsson/Local Sites/transkribus-publishing/app/public/wp-content/plugins/transcribus-viewer-for-wordpress/node_modules/@babel/core/lib/parser/index.js:41:34)
+    at parser.next (<anonymous>)
+    at normalizeFile (/Users/mattias.johnsson/Local Sites/transkribus-publishing/app/public/wp-content/plugins/transcribus-viewer-for-wordpress/node_modules/@babel/core/lib/transformation/normalize-file.js:64:37)
+    at normalizeFile.next (<anonymous>)
+    at run (/Users/mattias.johnsson/Local Sites/transkribus-publishing/app/public/wp-content/plugins/transcribus-viewer-for-wordpress/node_modules/@babel/core/lib/transformation/index.js:22:50)
+    at run.next (<anonymous>)
+    at transform (/Users/mattias.johnsson/Local Sites/transkribus-publishing/app/public/wp-content/plugins/transcribus-viewer-for-wordpress/node_modules/@babel/core/lib/transform.js:22:33)
+    at transform.next (<anonymous>)
+    at step (/Users/mattias.johnsson/Local Sites/transkribus-publishing/app/public/wp-content/plugins/transcribus-viewer-for-wordpress/node_modules/gensync/index.js:261:32)
+    at /Users/mattias.johnsson/Local Sites/transkribus-publishing/app/public/wp-content/plugins/transcribus-viewer-for-wordpress/node_modules/gensync/index.js:273:13
+    at async.call.result.err.err (/Users/mattias.johnsson/Local Sites/transkribus-publishing/app/public/wp-content/plugins/transcribus-viewer-for-wordpress/node_modules/gensync/index.js:223:11)
+    at /Users/mattias.johnsson/Local Sites/transkribus-publishing/app/public/wp-content/plugins/transcribus-viewer-for-wordpress/node_modules/gensync/index.js:189:28
+    at /Users/mattias.johnsson/Local Sites/transkribus-publishing/app/public/wp-content/plugins/transcribus-viewer-for-wordpress/node_modules/@babel/core/lib/gensync-utils/async.js:67:7
+    at /Users/mattias.johnsson/Local Sites/transkribus-publishing/app/public/wp-content/plugins/transcribus-viewer-for-wordpress/node_modules/gensync/index.js:113:33
+    at step (/Users/mattias.johnsson/Local Sites/transkribus-publishing/app/public/wp-content/plugins/transcribus-viewer-for-wordpress/node_modules/gensync/index.js:287:14)
+    at /Users/mattias.johnsson/Local Sites/transkribus-publishing/app/public/wp-content/plugins/transcribus-viewer-for-wordpress/node_modules/gensync/index.js:273:13
+    at async.call.result.err.err (/Users/mattias.johnsson/Local Sites/transkribus-publishing/app/public/wp-content/plugins/transcribus-viewer-for-wordpress/node_modules/gensync/index.js:223:11)
+ @ ./src/index.js 3:0-26 7:8-12
+
+webpack 5.102.1 compiled with 1 error in 1024 ms

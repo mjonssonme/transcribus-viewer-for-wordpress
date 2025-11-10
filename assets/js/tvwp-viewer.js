@@ -1,32 +1,95 @@
 /**
  * Transcribus Viewer for WordPress
  *
- * @version 1.0.1
+ * @version 1.2.5
  */
-document.addEventListener('DOMContentLoaded', function () {
-    const viewerElement = document.getElementById('tvwp-viewer');
-    if (!viewerElement) {
+
+// This is the core initialization logic.
+function initializeViewer(element) {
+    // Add a check to prevent re-initializing a viewer
+    if (element.dataset.initialized) {
         return;
     }
-    new TVWP_Viewer(viewerElement);
+    
+    if (element) {
+        element.dataset.initialized = 'true';
+        new TVWP_Viewer(element);
+    }
+}
+
+// --- THIS IS THE FIX ---
+
+// 1. Find all viewers that *already exist* on the page right now.
+// This is for the frontend (CPT page, shortcode, post preview).
+// We wrap it in DOMContentLoaded to make sure the footer script
+// sees the body HTML.
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('TVWP: DOMContentLoaded fired, running initial check.');
+    const viewers = document.querySelectorAll('.tvwp-viewer');
+    console.log(`TVWP: Initial check found ${viewers.length} viewer(s).`);
+    viewers.forEach(initializeViewer);
 });
 
+// 2. Create a MutationObserver to watch for new blocks being added by the editor.
+// This is for the block editor preview.
+const observer = new MutationObserver((mutationsList) => {
+    for (const mutation of mutationsList) {
+        if (mutation.type === 'childList') {
+            mutation.addedNodes.forEach(node => {
+                if (node.nodeType !== 1) return; // Not an element
+
+                if (node.classList && node.classList.contains('tvwp-viewer')) {
+                    console.log('TVWP: MutationObserver found a new viewer.');
+                    initializeViewer(node);
+                }
+                
+                if (node.querySelector) {
+                    const viewers = node.querySelectorAll('.tvwp-viewer');
+                    if (viewers.length > 0) {
+                        console.log(`TVWP: MutationObserver found ${viewers.length} nested viewer(s).`);
+                        viewers.forEach(initializeViewer);
+                    }
+                }
+            });
+        }
+    }
+});
+
+// Start observing the entire document for changes
+observer.observe(document.body, { childList: true, subtree: true });
+// --- END FIX ---
+
+
+/**
+ * Main Viewer Class
+ * (The rest of this file is 100% identical to the previous version)
+ */
 class TVWP_Viewer {
 
     constructor(element) {
         this.viewer = element;
         this.postId = this.viewer.dataset.postId;
-        this.restUrl = tvwp_data.rest_url;
-        this.i18n = tvwp_data.i18n;
+        this.restUrl = tvwp_data.rest_url; 
+        this.i18n = tvwp_data.i18n;       
+        
+        console.log(`TVWP: Initializing viewer for Post ID: ${this.postId}`);
+        
         this.currentPage = 1;
         this.totalPages = 0;
         this.pageData = {};
-        this.image = this.viewer.querySelector('#tvwp-image');
-        this.svgOverlay = this.viewer.querySelector('#tvwp-overlay');
-        this.textPane = this.viewer.querySelector('#tvwp-text-pane');
+
+        this.image = this.viewer.querySelector('.tvwp-image');
+        this.svgOverlay = this.viewer.querySelector('.tvwp-overlay');
+        this.textPane = this.viewer.querySelector('.tvwp-text-pane');
         this.controls = this.viewer.querySelector('.tvwp-controls');
         this.jumpSelect = this.viewer.querySelector('.tvwp-nav-jump');
         this.totalPagesSpan = this.viewer.querySelector('.tvwp-total-pages');
+
+        if (!this.image || !this.textPane || !this.controls) {
+            console.error('TVWP Error: Viewer HTML structure is missing elements.', this.viewer);
+            return;
+        }
+
         this.init();
     }
 
@@ -34,7 +97,10 @@ class TVWP_Viewer {
         this.showLoading(this.textPane);
         
         try {
-            const tocResponse = await fetch(`${this.restUrl}tvwp/v1/document/${this.postId}/toc`);
+            const tocUrl = `${this.restUrl}tvwp/v1/document/${this.postId}/toc`;
+            console.log(`TVWP: Fetching TOC: ${tocUrl}`);
+            
+            const tocResponse = await fetch(tocUrl);
             if (!tocResponse.ok) {
                 throw new Error(`Could not load TOC. Server responded ${tocResponse.status}`);
             }
@@ -51,12 +117,8 @@ class TVWP_Viewer {
             this.addEventListeners();
 
         } catch (error) {
-            console.error('TVWP Init Error:', error);
-            this.textPane.innerHTML = `<p>${this.i18n.loadingError || 'Error loading document.'}</p>`;
-            // Also update the loading message in the i18n localization
-            if (this.i18n) {
-                this.i18n.loadingError = 'Error loading document.';
-            }
+            console.error('TVWP Init Error:', error, this.viewer);
+            this.textPane.innerHTML = `<p>${this.i18n.loadingError}</p>`;
         }
     }
 
@@ -104,17 +166,20 @@ class TVWP_Viewer {
     async loadPage(pageNumber) {
         pageNumber = Math.max(1, Math.min(this.totalPages, pageNumber));
         if (pageNumber === this.currentPage && this.pageData.lines) {
-            return;
+            return; 
         }
         
         this.currentPage = pageNumber;
         this.jumpSelect.value = pageNumber;
         this.showLoading(this.textPane);
-        this.svgOverlay.innerHTML = ''; // Clear overlays
+        this.svgOverlay.innerHTML = '';
         this.image.src = '';
 
         try {
-            const pageResponse = await fetch(`${this.restUrl}tvwp/v1/document/${this.postId}/page/${this.currentPage}`);
+            const pageUrl = `${this.restUrl}tvwp/v1/document/${this.postId}/page/${this.currentPage}`;
+            console.log(`TVWP: Fetching Page: ${pageUrl}`);
+
+            const pageResponse = await fetch(pageUrl);
             if (!pageResponse.ok) {
                 throw new Error(`Could not load page data. Server responded ${pageResponse.status}`);
             }
@@ -129,8 +194,8 @@ class TVWP_Viewer {
             this.renderText();
 
         } catch (error) {
-            console.error('TVWP LoadPage Error:', error);
-            this.textPane.innerHTML = `<p>${this.i18n.loadingError || 'Error loading page.'}</p>`;
+            console.error('TVWP LoadPage Error:', error, this.viewer);
+            this.textPane.innerHTML = `<p>Error loading page ${this.currentPage}.</p>`;
         }
     }
 
@@ -151,27 +216,22 @@ class TVWP_Viewer {
             return;
         }
 
-        // --- THIS IS THE FIX ---
-        // Prevent 0,NaN error by checking for valid dimensions
         const originalWidth = this.pageData.image_width || 0;
         const displayWidth = this.image.clientWidth;
         
         if (originalWidth === 0 || displayWidth === 0) {
-            console.error("TVWP Error: Invalid image dimensions. Cannot draw overlays.");
-            return; // Stop function to prevent crash
+            return;
         }
         
         const ratio = displayWidth / originalWidth;
-        // --- END FIX ---
 
         let svgHtml = '';
         
         this.pageData.lines.forEach(line => {
-            if (!line.coords) return; // Skip lines that have no coordinates
+            if (!line.coords) return; 
 
             const scaledPoints = line.coords.split(' ').map(pair => {
                 const [x, y] = pair.split(',');
-                // Ensure x and y are numbers
                 const numX = parseFloat(x) || 0;
                 const numY = parseFloat(y) || 0;
                 return `${numX * ratio},${numY * ratio}`;
@@ -191,6 +251,7 @@ class TVWP_Viewer {
         if (!lineId) return;
 
         const isEntering = (e.type === 'mouseenter');
+        
         const textSpan = this.textPane.querySelector(`.tvwp-line[data-line-id="${lineId}"]`);
         const svgPolygon = this.svgOverlay.querySelector(`.tvwp-line[data-line-id="${lineId}"]`);
 
@@ -206,6 +267,7 @@ class TVWP_Viewer {
     }
 
     showLoading(element) {
+        if (!element) return;
         if (element.tagName === 'svg') {
             element.innerHTML = `<text x="10" y="20" fill="#888">${this.i18n.loading}</text>`;
         } else {

@@ -1,0 +1,16 @@
+{
+  "name": "tvwp-blocks",
+  "version": "1.0.0",
+  "description": "Gutenberg blocks for Transcribus Viewer.",
+  "private": true,
+  "scripts": {
+    "start": "wp-scripts start",
+    "build": "wp-scripts build"
+  },
+  "devDependencies": {
+    "@wordpress/scripts": "^27.6.0"
+  },
+  "dependencies": {
+    "@wordpress/server-side-render": "^6.10.0"
+  }
+}
