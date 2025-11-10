@@ -1,5 +1,5 @@
 === Transcribus Viewer for WordPress ===
-Contributors: Mattias Johnsson
+Contributors: mattiasjohnsson
 Author: Mattias Johnsson
 Author URI: https://mjonsson.me
 Requires at least: 6.0
@@ -26,8 +26,17 @@ The viewer displays the transcribed page image and the transcribed text side-by-
 
 == Changelog ==
 
+= 1.0.1 =
+* Feat: Import document description from metadata.xml as placeholder content.
+* Docs: Update user guide to reflect new feature.
+
 = 1.0.0 =
 * Initial Release.
 
-= 1.0.1 =
-* Added "Description" metadata from Transcribus to main post in wordpress
+== Credits ==
+
+This plugin uses the following open-source library:
+
+* **Action Scheduler**
+    * URL: https://github.com/woocommerce/action-scheduler
+    * License: GPLv2 or later
