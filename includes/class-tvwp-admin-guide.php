@@ -81,14 +81,28 @@ class TVWP_Admin_Guide {
                 <li>Go to <strong>Transkribus Docs &gt; All Documents</strong>.</li>
                 <li>After a minute, you will see your new document appear with the correct title, saved as a <strong>"Draft"</strong>.</li>
                 <li>Click "Edit" on the new document.</li>
-                <li>The main text editor will be empty. You can write your own introduction or notes about the document here. This text will appear above the viewer.</li>
+                <li>The main text editor will be <strong>pre-filled with the document description</strong> from your Transkribus metadata. You can edit this text or add your own introduction.</li>
                 <li>When you are ready, click the "Publish" button.</li>
             </ol>
 
             <hr>
+            
+            <h2>Step 4: How to Display Your Document</h2>
+            <p>You have two options for displaying your document:</p>
 
-            <h2>Step 4: View Your Document</h2>
-            <p>Click "View Document" (or the public permalink) to see your published transcription. The viewer will show your custom text, followed by the interactive image and text panes.</p>
+            <h3>Option A: The Default Document Page (Recommended)</h3>
+            <p>When you publish your document, it gets its own URL. Simply click "View Document" to see the interactive viewer on its own dedicated page.</p>
+            
+            <h3>Option B: Embed in Any Post or Page (Gutenberg Block)</h3>
+            <p>You can embed your viewer inside any other post or page (like a blog post).</p>
+            <ol>
+                <li>Edit the post or page where you want to show the viewer.</li>
+                <li>Click the "+" icon to add a new block.</li>
+                <li>Search for and select the <strong>"Transcribus Document"</strong> block.</li>
+                <li>In the block settings panel on the right, use the dropdown menu to select the document you just published.</li>
+                <li>The viewer will load directly in the editor as a live preview.</li>
+                <li>Save or Update your post.</li>
+            </ol>
 
         </div>
         <?php

@@ -15,40 +15,22 @@ class TVWP_Frontend {
     }
 
     private function __construct() {
+        // --- FIX: Add the frontend enqueue hook BACK ---
         add_action( 'wp_enqueue_scripts', [ $this, 'enqueue_assets' ] );
+        // --- END FIX ---
+
         add_filter( 'template_include', [ $this, 'template_takeover' ] );
+        $this->register_shortcode();
     }
 
+    /**
+     * Enqueue assets for the public frontend.
+     */
     public function enqueue_assets() {
-        // Only load assets on our CPT's single page
+        // This is for the CPT's own page
         if ( is_singular( 'transkribus_document' ) ) {
-            
-            wp_enqueue_style(
-                'tvwp-viewer-css',
-                TVWP_PLUGIN_URL . 'assets/css/tvwp-viewer.css',
-                [],
-                TVWP_VERSION
-            );
-            
-            wp_enqueue_script(
-                'tvwp-viewer-js',
-                TVWP_PLUGIN_URL . 'assets/js/tvwp-viewer.js',
-                [], // dependencies
-                TVWP_VERSION,
-                true // in footer
-            );
-
-            // Pass data to JavaScript
-            wp_localize_script( 'tvwp-viewer-js', 'tvwp_data', [
-                'rest_url' => esc_url_raw( rest_url() ),
-                'post_id'  => get_the_ID(),
-                'nonce'    => wp_create_nonce( 'wp_rest' ), // For future use
-                'i18n'     => [
-                    'loading' => __( 'Loading...', 'tvwp' ),
-                    'page'    => __( 'Page', 'tvwp' ),
-                    'of'      => __( 'of', 'tvwp' ),
-                ]
-            ] );
+            wp_enqueue_style( 'tvwp-viewer-css' );
+            wp_enqueue_script( 'tvwp-viewer-js' );
         }
     }
 
@@ -60,5 +42,57 @@ class TVWP_Frontend {
             }
         }
         return $template;
+    }
+
+    public function register_shortcode() {
+        add_shortcode( 'transkribus_viewer', [ $this, 'render_shortcode' ] );
+    }
+
+    public function render_shortcode( $atts ) {
+        $atts = shortcode_atts( [
+            'id' => 0,
+        ], $atts, 'transkribus_viewer' );
+
+        $post_id = (int) $atts['id'];
+        if ( ! $post_id || get_post_type( $post_id ) !== 'transkribus_document' ) {
+            return '<p><em>Transcribus Viewer: Invalid document ID.</em></p>';
+        }
+
+        // Manually load assets (this is what makes it work in shortcodes)
+        wp_enqueue_style( 'tvwp-viewer-css' );
+        wp_enqueue_script( 'tvwp-viewer-js' );
+
+        $doc = get_post( $post_id );
+        $description = apply_filters( 'the_content', $doc->post_content );
+
+        $viewer_html = sprintf(
+            '<div id="tvwp-viewer-%1$d" class="tvwp-viewer" data-post-id="%1$d">
+                <div class="tvwp-controls">
+                    <button class="tvwp-nav" data-nav-skip="-5" title="5 pages back">-5</button>
+                    <button class="tvwp-nav" data-nav-step="-1" title="Previous page">Previous</button>
+                    <span class="tvwp-page-display">
+                        Page 
+                        <select class="tvwp-nav-jump" title="Jump to page"></select>
+                        of 
+                        <span class="tvwp-total-pages">...</span>
+                    </span>
+                    <button class="tvwp-nav" data-nav-step="1" title="Next page">Next</button>
+                    <button class="tvwp-nav" data-nav-skip="5" title="5 pages forward">+5</button>
+                </div>
+                <div class="tvwp-main-content">
+                    <div class="tvwp-image-pane">
+                        <div class="tvwp-image-wrapper">
+                            <img class="tvwp-image" src="" alt="Transcribed page image" />
+                            <svg class="tvwp-overlay" xmlns="http://www.w3.org/2000/svg"></svg>
+                        </div>
+                    </div>
+                    <div class="tvwp-text-pane">
+                        </div>
+                </div>
+            </div>',
+            esc_attr( $post_id )
+        );
+
+        return '<div class="tvwp-shortcode-wrapper">' . $description . $viewer_html . '</div>';
     }
 }

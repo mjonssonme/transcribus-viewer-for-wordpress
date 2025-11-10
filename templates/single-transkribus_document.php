@@ -20,7 +20,8 @@ get_header(); ?>
                     <div class="tvwp-post-content">
                         <?php the_content(); ?>
                     </div>
-                    <div id="tvwp-viewer" class="tvwp-viewer" data-post-id="<?php the_ID(); ?>">
+                    
+                    <div id="tvwp-viewer-<?php the_ID(); ?>" class="tvwp-viewer" data-post-id="<?php the_ID(); ?>">
                         
                         <div class="tvwp-controls">
                             <button class="tvwp-nav" data-nav-skip="-5" title="5 pages back">-5</button>
@@ -38,11 +39,11 @@ get_header(); ?>
                         <div class="tvwp-main-content">
                             <div class="tvwp-image-pane">
                                 <div class="tvwp-image-wrapper">
-                                    <img id="tvwp-image" src="" alt="Transcribed page image" />
-                                    <svg id="tvwp-overlay" class="tvwp-overlay" xmlns="http://www.w3.org/2000/svg"></svg>
+                                    <img class="tvwp-image" src="" alt="Transcribed page image" />
+                                    <svg class="tvwp-overlay" xmlns="http://www.w3.org/2000/svg"></svg>
                                 </div>
                             </div>
-                            <div id="tvwp-text-pane" class="tvwp-text-pane">
+                            <div class="tvwp-text-pane">
                                 </div>
                         </div>
 
