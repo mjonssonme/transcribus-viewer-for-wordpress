@@ -47,7 +47,7 @@ class TVWP_Async_Processor {
         $content_root = dirname( $mets_path );
         
         try {
-            // Load METS XML (SimpleXML is fine here)
+            // Load METS XML
             $mets_xml = simplexml_load_file( $mets_path );
             if ($mets_xml === false) {
                 $this->fail_post( $post_id, 'Failed to parse mets.xml.' );
@@ -61,6 +61,22 @@ class TVWP_Async_Processor {
             $doc_title = (string) $mets_xml->attributes()->LABEL;
             $page_map = [];
 
+            // --- V1.0.1 FEATURE: Get description from metadata.xml ---
+            $doc_description = '';
+            $metadata_path = $content_root . '/metadata.xml';
+            if ( file_exists( $metadata_path ) ) {
+                $metadata_xml = simplexml_load_file( $metadata_path );
+                if ( $metadata_xml && isset( $metadata_xml->desc ) ) {
+                    // Clean up the description text
+                    $doc_description = trim( (string) $metadata_xml->desc );
+                    // Convert double line breaks to paragraphs
+                    $doc_description = preg_replace( "/\r\n\r\n|\n\n/", "</p><p>", $doc_description );
+                    $doc_description = '<p>' . $doc_description . '</p>';
+                }
+            }
+            // --- END V1.0.1 FEATURE ---
+
+            // Get all files and their IDs
             $file_nodes = $mets_xml->xpath('//ns3:file');
             $file_id_map = [];
             foreach ($file_nodes as $file_node) {
@@ -72,11 +88,12 @@ class TVWP_Async_Processor {
                 }
             }
 
+            // Get all page sections
             $page_divs = $mets_xml->xpath('//ns3:structMap[@TYPE="MANUSCRIPT"]//ns3:div[@TYPE="SINGLE_PAGE"]');
 
             if (empty($page_divs)) {
-                $this->fail_post( $post_id, 'No pages with TYPE="SINGLE_PAGE" found in mets.xml.' );
-                $this->cleanup( $zip_path, $unzip_dir );
+                $this.fail_post( $post_id, 'No pages with TYPE="SINGLE_PAGE" found in mets.xml.' );
+                $this.cleanup( $zip_path, $unzip_dir );
                 return;
             }
 
@@ -113,23 +130,20 @@ class TVWP_Async_Processor {
                 if ( ! $attachment_id ) continue;
                 $image_url = wp_get_attachment_url( $attachment_id );
 
-                // --- THIS IS THE FIX ---
                 // Switch to DOMDocument for robust Page XML parsing
                 $page_dom = new DOMDocument();
                 @$page_dom->load( $xml_path );
                 $page_xpath = new DOMXPath( $page_dom );
                 
-                // This query finds the <Page> node, ignoring any namespace prefixes
                 $page_node_list = $page_xpath->query( "//*[local-name()='Page']" );
                 if( $page_node_list->length === 0 ) {
                     error_log("TVWP: Could not find <Page> node in $xml_path");
-                    continue; // Skip this page
+                    continue; 
                 }
                 $page_node = $page_node_list[0];
                 
                 $page_width = (int)$page_node->getAttribute('imageWidth');
                 $page_height = (int)$page_node->getAttribute('imageHeight');
-                // --- END FIX ---
                 
                 $page_data = [
                     'image_url'    => $image_url,
@@ -138,18 +152,15 @@ class TVWP_Async_Processor {
                     'lines'        => [],
                 ];
                 
-                // This query finds all <TextLine> nodes, ignoring namespaces
                 $text_lines = $page_xpath->query( "//*[local-name()='TextLine']" );
                 
                 foreach ( $text_lines as $line ) {
                     
-                    // --- THIS IS THE FIX ---
                     $line_text_node = $page_xpath->query( ".//*[local-name()='Unicode']", $line )->item(0);
                     $line_text = $line_text_node ? $line_text_node->nodeValue : '';
                     
                     $coords_node = $page_xpath->query( ".//*[local-name()='Coords']", $line )->item(0);
                     $coords = $coords_node ? $coords_node->getAttribute('points') : '';
-                    // --- END FIX ---
                     
                     $page_data['lines'][] = [
                         'id'     => $line->getAttribute('id'),
@@ -166,7 +177,7 @@ class TVWP_Async_Processor {
                 'post_title'   => $doc_title,
                 'post_name'    => sanitize_title( $doc_title ),
                 'post_status'  => 'draft',
-                'post_content' => '',
+                'post_content' => $doc_description, // <-- V1.0.1 FEATURE IS HERE
             ] );
             
             update_post_meta( $post_id, '_page_count', count( $page_map ) );

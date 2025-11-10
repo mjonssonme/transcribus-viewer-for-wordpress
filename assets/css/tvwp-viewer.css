@@ -78,7 +78,7 @@
     font-family: 'Times New Roman', Times, serif;
     line-height: 1.6;
     /* --- FIX: Added max-height and overflow-y --- */
-    max-height: 47vh;
+    max-height: 50vh;
     overflow-y: auto;
 }
 
