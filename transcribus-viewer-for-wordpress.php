@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name:       Transcribus Viewer for WordPress
- * Plugin URI:        (Your plugin's URL)
+ * Plugin URI:        https://github.com/mjonssonme/transcribus-viewer-for-wordpress
  * Description:       Uploads Transkribus exports (ZIP) and displays them in an interactive viewer.
  * Version:           1.2.0
  * Author:            Mattias Johnsson
