@@ -8,7 +8,7 @@
     "build": "wp-scripts build"
   },
   "devDependencies": {
-    "@wordpress/scripts": "^27.6.0"
+    "@wordpress/scripts": "^30.27.0"
   },
   "dependencies": {
     "@wordpress/server-side-render": "^6.10.0"
