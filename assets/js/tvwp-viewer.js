@@ -1,16 +1,24 @@
 /**
  * Transcribus Viewer for WordPress
  *
- * @version 1.0.1
+ * @version 1.1.0
  */
 document.addEventListener('DOMContentLoaded', function () {
-    const viewerElement = document.getElementById('tvwp-viewer');
-    if (!viewerElement) {
-        return;
-    }
-    new TVWP_Viewer(viewerElement);
+    // V1.1: Find all viewer instances on the page
+    const viewerElements = document.querySelectorAll('.tvwp-viewer');
+    
+    // Create a new Viewer object for each one
+    viewerElements.forEach(viewerElement => {
+        if (viewerElement) {
+            new TVWP_Viewer(viewerElement);
+        }
+    });
 });
 
+/**
+ * Main Viewer Class
+ * This class now manages a single viewer instance.
+ */
 class TVWP_Viewer {
 
     constructor(element) {
@@ -18,15 +26,24 @@ class TVWP_Viewer {
         this.postId = this.viewer.dataset.postId;
         this.restUrl = tvwp_data.rest_url;
         this.i18n = tvwp_data.i18n;
+        
         this.currentPage = 1;
         this.totalPages = 0;
         this.pageData = {};
-        this.image = this.viewer.querySelector('#tvwp-image');
-        this.svgOverlay = this.viewer.querySelector('#tvwp-overlay');
-        this.textPane = this.viewer.querySelector('#tvwp-text-pane');
+
+        // V1.1: Find elements *inside* this specific viewer instance
+        this.image = this.viewer.querySelector('.tvwp-image');
+        this.svgOverlay = this.viewer.querySelector('.tvwp-overlay');
+        this.textPane = this.viewer.querySelector('.tvwp-text-pane');
         this.controls = this.viewer.querySelector('.tvwp-controls');
         this.jumpSelect = this.viewer.querySelector('.tvwp-nav-jump');
         this.totalPagesSpan = this.viewer.querySelector('.tvwp-total-pages');
+
+        if (!this.image || !this.textPane || !this.controls) {
+            console.error('TVWP Error: Viewer HTML structure is missing elements.', this.viewer);
+            return;
+        }
+
         this.init();
     }
 
@@ -51,12 +68,8 @@ class TVWP_Viewer {
             this.addEventListeners();
 
         } catch (error) {
-            console.error('TVWP Init Error:', error);
-            this.textPane.innerHTML = `<p>${this.i18n.loadingError || 'Error loading document.'}</p>`;
-            // Also update the loading message in the i18n localization
-            if (this.i18n) {
-                this.i18n.loadingError = 'Error loading document.';
-            }
+            console.error('TVWP Init Error:', error, this.viewer);
+            this.textPane.innerHTML = `<p>${this.i18n.loadingError}</p>`;
         }
     }
 
@@ -81,6 +94,7 @@ class TVWP_Viewer {
             this.drawOverlays();
         });
 
+        // Note: Resize needs to be debounced globally, but drawOverlays is instance-specific
         window.addEventListener('resize', this.debounce(() => {
             if (this.pageData.lines) {
                 this.drawOverlays();
@@ -129,8 +143,8 @@ class TVWP_Viewer {
             this.renderText();
 
         } catch (error) {
-            console.error('TVWP LoadPage Error:', error);
-            this.textPane.innerHTML = `<p>${this.i18n.loadingError || 'Error loading page.'}</p>`;
+            console.error('TVWP LoadPage Error:', error, this.viewer);
+            this.textPane.innerHTML = `<p>Error loading page ${this.currentPage}.</p>`;
         }
     }
 
@@ -151,27 +165,22 @@ class TVWP_Viewer {
             return;
         }
 
-        // --- THIS IS THE FIX ---
-        // Prevent 0,NaN error by checking for valid dimensions
         const originalWidth = this.pageData.image_width || 0;
         const displayWidth = this.image.clientWidth;
         
         if (originalWidth === 0 || displayWidth === 0) {
-            console.error("TVWP Error: Invalid image dimensions. Cannot draw overlays.");
             return; // Stop function to prevent crash
         }
         
         const ratio = displayWidth / originalWidth;
-        // --- END FIX ---
 
         let svgHtml = '';
         
         this.pageData.lines.forEach(line => {
-            if (!line.coords) return; // Skip lines that have no coordinates
+            if (!line.coords) return; 
 
             const scaledPoints = line.coords.split(' ').map(pair => {
                 const [x, y] = pair.split(',');
-                // Ensure x and y are numbers
                 const numX = parseFloat(x) || 0;
                 const numY = parseFloat(y) || 0;
                 return `${numX * ratio},${numY * ratio}`;
@@ -191,6 +200,8 @@ class TVWP_Viewer {
         if (!lineId) return;
 
         const isEntering = (e.type === 'mouseenter');
+        
+        // V1.1: Find elements *inside this instance*
         const textSpan = this.textPane.querySelector(`.tvwp-line[data-line-id="${lineId}"]`);
         const svgPolygon = this.svgOverlay.querySelector(`.tvwp-line[data-line-id="${lineId}"]`);
 
