@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^cd \"/Users/mattias\\.johnsson/Local Sites/transkribus-publishing/app/public/wp-content/plugins/transcribus-viewer-for-wordpress\" && node -c assets/js/tvwp-viewer\\.js$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}

@@ -21,23 +21,29 @@
     position: relative;
     padding: 10px;
     border-right: 1px solid #ddd;
-    /* --- FIX: Added max-height and overflow --- */
     max-height: 50vh;
     overflow: auto;
+    /* Prevent scrollbars from affecting zoom calculations */
+    box-sizing: border-box;
 }
 
 .tvwp-image-wrapper {
     position: relative;
-    /* --- FIX: Changed width to min-width for scaling up --- */
-    min-width: 100%; 
+    width: 100%;
     height: auto;
-    display: inline-block; /* Allows wrapper to grow with image */
+    display: inline-block;
+    transform-origin: 0 0;
+    /* Smooth transform transitions except during active dragging */
+    will-change: transform;
 }
 
 #tvwp-image {
     width: 100%;
     height: auto;
     display: block;
+    /* Prevent image dragging interference */
+    user-select: none;
+    -webkit-user-drag: none;
 }
 
 /* SVG Overlay */
@@ -47,14 +53,17 @@
     left: 0;
     width: 100%;
     height: 100%;
+    pointer-events: none;
 }
 
 .tvwp-overlay polygon {
-    fill: transparent; 
+    fill: transparent;
     stroke: none;
     pointer-events: all;
     cursor: pointer;
     transition: fill 0.1s ease;
+    /* Ensure stroke width scales properly with zoom */
+    vector-effect: non-scaling-stroke;
 }
 
 .tvwp-overlay polygon:hover {

@@ -1,7 +1,7 @@
 /**
  * Transcribus Viewer for WordPress
  *
- * @version 1.2.5
+ * @version 1.3.0
  */
 
 // This is the core initialization logic.
@@ -69,11 +69,11 @@ class TVWP_Viewer {
     constructor(element) {
         this.viewer = element;
         this.postId = this.viewer.dataset.postId;
-        this.restUrl = tvwp_data.rest_url; 
-        this.i18n = tvwp_data.i18n;       
-        
+        this.restUrl = tvwp_data.rest_url;
+        this.i18n = tvwp_data.i18n;
+
         console.log(`TVWP: Initializing viewer for Post ID: ${this.postId}`);
-        
+
         this.currentPage = 1;
         this.totalPages = 0;
         this.pageData = {};
@@ -84,8 +84,20 @@ class TVWP_Viewer {
         this.controls = this.viewer.querySelector('.tvwp-controls');
         this.jumpSelect = this.viewer.querySelector('.tvwp-nav-jump');
         this.totalPagesSpan = this.viewer.querySelector('.tvwp-total-pages');
+        this.imagePane = this.viewer.querySelector('.tvwp-image-pane');
+        this.imageWrapper = this.viewer.querySelector('.tvwp-image-wrapper');
 
-        if (!this.image || !this.textPane || !this.controls) {
+        // Zoom and pan state
+        this.zoom = 1;
+        this.minZoom = 1;
+        this.maxZoom = 5;
+        this.panX = 0;
+        this.panY = 0;
+        this.isPanning = false;
+        this.startPanX = 0;
+        this.startPanY = 0;
+
+        if (!this.image || !this.textPane || !this.controls || !this.imagePane || !this.imageWrapper) {
             console.error('TVWP Error: Viewer HTML structure is missing elements.', this.viewer);
             return;
         }
@@ -153,6 +165,18 @@ class TVWP_Viewer {
         this.textPane.addEventListener('mouseleave', this.handleHighlight.bind(this), true);
         this.svgOverlay.addEventListener('mouseenter', this.handleHighlight.bind(this), true);
         this.svgOverlay.addEventListener('mouseleave', this.handleHighlight.bind(this), true);
+
+        // Zoom with mouse wheel
+        this.imagePane.addEventListener('wheel', this.handleWheel.bind(this), { passive: false });
+
+        // Pan with mouse drag
+        this.imageWrapper.addEventListener('mousedown', this.handlePanStart.bind(this));
+        this.imageWrapper.addEventListener('mousemove', this.handlePanMove.bind(this));
+        this.imageWrapper.addEventListener('mouseup', this.handlePanEnd.bind(this));
+        this.imageWrapper.addEventListener('mouseleave', this.handlePanEnd.bind(this));
+
+        // Click text line to center on image
+        this.textPane.addEventListener('click', this.handleTextClick.bind(this));
     }
     
     populateJumpSelect() {
@@ -166,14 +190,20 @@ class TVWP_Viewer {
     async loadPage(pageNumber) {
         pageNumber = Math.max(1, Math.min(this.totalPages, pageNumber));
         if (pageNumber === this.currentPage && this.pageData.lines) {
-            return; 
+            return;
         }
-        
+
         this.currentPage = pageNumber;
         this.jumpSelect.value = pageNumber;
         this.showLoading(this.textPane);
         this.svgOverlay.innerHTML = '';
         this.image.src = '';
+
+        // Reset zoom and pan when loading new page
+        this.zoom = 1;
+        this.panX = 0;
+        this.panY = 0;
+        this.updateTransform();
 
         try {
             const pageUrl = `${this.restUrl}tvwp/v1/document/${this.postId}/page/${this.currentPage}`;
@@ -183,13 +213,13 @@ class TVWP_Viewer {
             if (!pageResponse.ok) {
                 throw new Error(`Could not load page data. Server responded ${pageResponse.status}`);
             }
-            
+
             this.pageData = await pageResponse.json();
-            
+
             if (!this.pageData.image_url) {
                 throw new Error('Page data is missing image URL.');
             }
-            
+
             this.image.src = this.pageData.image_url;
             this.renderText();
 
@@ -246,12 +276,12 @@ class TVWP_Viewer {
     handleHighlight(e) {
         const target = e.target.closest('.tvwp-line');
         if (!target) return;
-        
+
         const lineId = target.dataset.lineId;
         if (!lineId) return;
 
         const isEntering = (e.type === 'mouseenter');
-        
+
         const textSpan = this.textPane.querySelector(`.tvwp-line[data-line-id="${lineId}"]`);
         const svgPolygon = this.svgOverlay.querySelector(`.tvwp-line[data-line-id="${lineId}"]`);
 
@@ -264,6 +294,122 @@ class TVWP_Viewer {
                 svgPolygon.classList.remove('tvwp-highlight');
             }
         }
+    }
+
+    handleWheel(e) {
+        e.preventDefault();
+
+        const delta = -e.deltaY;
+        const zoomIntensity = 0.1;
+        const newZoom = Math.max(this.minZoom, Math.min(this.maxZoom, this.zoom + (delta > 0 ? zoomIntensity : -zoomIntensity)));
+
+        if (newZoom === this.zoom) return;
+
+        // Get mouse position relative to the image pane
+        const rect = this.imagePane.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        // Calculate zoom point relative to current transform
+        const zoomPointX = (mouseX - this.panX) / this.zoom;
+        const zoomPointY = (mouseY - this.panY) / this.zoom;
+
+        // Update zoom
+        this.zoom = newZoom;
+
+        // Adjust pan to keep zoom point under mouse
+        this.panX = mouseX - zoomPointX * this.zoom;
+        this.panY = mouseY - zoomPointY * this.zoom;
+
+        this.updateTransform();
+    }
+
+    handlePanStart(e) {
+        if (this.zoom <= 1) return; // Only pan when zoomed in
+
+        e.preventDefault();
+        this.isPanning = true;
+        this.startPanX = e.clientX - this.panX;
+        this.startPanY = e.clientY - this.panY;
+        this.imageWrapper.style.cursor = 'grabbing';
+    }
+
+    handlePanMove(e) {
+        if (!this.isPanning) return;
+
+        e.preventDefault();
+        this.panX = e.clientX - this.startPanX;
+        this.panY = e.clientY - this.startPanY;
+        this.updateTransform();
+    }
+
+    handlePanEnd() {
+        this.isPanning = false;
+        this.imageWrapper.style.cursor = this.zoom > 1 ? 'grab' : 'default';
+    }
+
+    handleTextClick(e) {
+        const target = e.target.closest('.tvwp-line');
+        if (!target) return;
+
+        const lineId = target.dataset.lineId;
+        if (!lineId) return;
+
+        this.centerOnLine(lineId);
+    }
+
+    centerOnLine(lineId) {
+        // Find the line data
+        const line = this.pageData.lines?.find(l => l.id === lineId);
+        if (!line || !line.coords) return;
+
+        // Parse coordinates to find bounding box
+        const points = line.coords.split(' ').map(pair => {
+            const [x, y] = pair.split(',');
+            return { x: parseFloat(x) || 0, y: parseFloat(y) || 0 };
+        });
+
+        if (points.length === 0) return;
+
+        // Find center of the line
+        const minX = Math.min(...points.map(p => p.x));
+        const maxX = Math.max(...points.map(p => p.x));
+        const minY = Math.min(...points.map(p => p.y));
+        const maxY = Math.max(...points.map(p => p.y));
+
+        const centerX = (minX + maxX) / 2;
+        const centerY = (minY + maxY) / 2;
+
+        // Scale to current display size
+        const originalWidth = this.pageData.image_width || 0;
+        const displayWidth = this.image.clientWidth;
+        const ratio = displayWidth / originalWidth;
+
+        const scaledCenterX = centerX * ratio;
+        const scaledCenterY = centerY * ratio;
+
+        // Calculate pan to center this point in the viewport
+        const paneRect = this.imagePane.getBoundingClientRect();
+        const viewportCenterX = paneRect.width / 2;
+        const viewportCenterY = paneRect.height / 2;
+
+        // Apply zoom scaling to the target center point
+        this.panX = viewportCenterX - (scaledCenterX * this.zoom);
+        this.panY = viewportCenterY - (scaledCenterY * this.zoom);
+
+        this.updateTransform(true);
+    }
+
+    updateTransform(smooth = false) {
+        if (smooth) {
+            this.imageWrapper.style.transition = 'transform 0.3s ease-out';
+            setTimeout(() => {
+                this.imageWrapper.style.transition = '';
+            }, 300);
+        }
+
+        this.imageWrapper.style.transform = `translate(${this.panX}px, ${this.panY}px) scale(${this.zoom})`;
+        this.imageWrapper.style.cursor = this.zoom > 1 ? 'grab' : 'default';
     }
 
     showLoading(element) {

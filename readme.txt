@@ -5,7 +5,7 @@ Author URI: https://mjonsson.me
 Requires at least: 6.0
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 1.2.0
+Stable tag: 1.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -29,6 +29,13 @@ The viewer displays the document's description followed by the interactive image
 5.  Navigate to "Transkribus Docs" > "User Guide" for next steps.
 
 == Changelog ==
+
+= 1.3.0 =
+* Feat: Added zoom functionality using mouse scroll wheel (1x-5x zoom range).
+* Feat: Added drag-to-pan functionality when zoomed in on the document image.
+* Feat: Click on text lines to automatically center the corresponding area in the image viewer.
+* Feat: Text-area polygon overlays remain perfectly aligned during zoom and pan operations.
+* Enhancement: Smooth animations when centering on clicked text lines.
 
 = 1.2.0 =
 * Feat: Added a custom "Transkribus Document" Gutenberg block for easy embedding in any post or page.
