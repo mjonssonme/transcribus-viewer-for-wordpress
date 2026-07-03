@@ -33,7 +33,9 @@ npm run build
 STAGING_DIR="dist/${SLUG}"
 ZIP_NAME="${SLUG}-${VERSION}.zip"
 
-rm -rf dist
+# Only clear the staging subdirectory, never the rest of dist/ - older release
+# zips are kept around intentionally so past versions stay available for testing.
+rm -rf "$STAGING_DIR"
 mkdir -p "$STAGING_DIR"
 
 # Only the files WordPress needs at runtime - no src/, node_modules, dev tooling, or VCS files.
@@ -56,6 +58,9 @@ done
 # Strip stray OS/editor files that may have been copied along with a directory.
 find "$STAGING_DIR" -name ".DS_Store" -delete
 
+# Remove only this version's zip if rebuilding it, so it doesn't inherit stale
+# entries from a previous build of the same version - other versions are untouched.
+rm -f "dist/${ZIP_NAME}"
 ( cd dist && zip -rq "$ZIP_NAME" "$SLUG" )
 rm -rf "$STAGING_DIR"
 
