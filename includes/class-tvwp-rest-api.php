@@ -51,6 +51,20 @@ class TVWP_Rest_Api {
             ],
             'permission_callback' => '__return_true', // Public
         ] );
+
+        // Admin-only endpoint for the upload page to poll background-processing status.
+        register_rest_route( 'tvwp/v1', '/document/(?P<post_id>\d+)/status', [
+            'methods'  => WP_REST_Server::READABLE,
+            'callback' => [ $this, 'get_processing_status' ],
+            'args'     => [
+                'post_id' => [
+                    'required' => true,
+                ],
+            ],
+            'permission_callback' => function () {
+                return current_user_can( 'manage_options' );
+            },
+        ] );
     }
 
     public function get_toc( $request ) {
@@ -84,6 +98,16 @@ class TVWP_Rest_Api {
         }
 
         return new WP_REST_Response( $page_data, 200 );
+    }
+
+    public function get_processing_status( $request ) {
+        $post_id = (int) $request['post_id'];
+
+        if ( get_post_type( $post_id ) !== 'transkribus_document' ) {
+            return new WP_Error( 'tvwp_not_found', 'Document not found.', [ 'status' => 404 ] );
+        }
+
+        return new WP_REST_Response( [ 'status' => get_post_status( $post_id ) ], 200 );
     }
 
     /**

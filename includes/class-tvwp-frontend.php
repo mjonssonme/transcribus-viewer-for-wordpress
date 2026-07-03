@@ -50,7 +50,9 @@ class TVWP_Frontend {
 
     public function render_shortcode( $atts ) {
         $atts = shortcode_atts( [
-            'id' => 0,
+            'id'     => 0,
+            // Pane height in pixels; 0 keeps the plugin's default (50vh).
+            'height' => 0,
         ], $atts, 'transkribus_viewer' );
 
         $post_id = (int) $atts['id'];
@@ -65,16 +67,29 @@ class TVWP_Frontend {
         $doc = get_post( $post_id );
         $description = apply_filters( 'the_content', $doc->post_content );
 
-        return '<div class="tvwp-shortcode-wrapper">' . $description . self::render_viewer_markup( $post_id ) . '</div>';
+        return '<div class="tvwp-shortcode-wrapper">' . $description . self::render_viewer_markup( $post_id, (int) $atts['height'] ) . '</div>';
     }
 
     /**
      * Shared viewer markup, used both by the shortcode/block renderer and the CPT's own
      * single-document template so the two can't drift out of sync.
+     *
+     * @param int $post_id
+     * @param int $height_px Optional fixed pane height in pixels. 0 keeps the
+     *                        plugin's default (50vh); visitors can still drag the
+     *                        native resize handle either way. Applied by
+     *                        tvwp-viewer.js as a direct inline style (not a CSS
+     *                        custom property, which turned out unreliable across
+     *                        the block editor's iframe canvas).
      */
-    public static function render_viewer_markup( $post_id ) {
+    public static function render_viewer_markup( $post_id, $height_px = 0 ) {
+        $height_attr = '';
+        if ( $height_px > 0 ) {
+            $height_attr = sprintf( ' data-tvwp-height="%d"', $height_px );
+        }
+
         return sprintf(
-            '<div id="tvwp-viewer-%1$d" class="tvwp-viewer" data-post-id="%1$d">
+            '<div id="tvwp-viewer-%1$d" class="tvwp-viewer" data-post-id="%1$d"%2$s>
                 <div class="tvwp-controls">
                     <button class="tvwp-nav" data-nav-goto="first" title="First page">First</button>
                     <button class="tvwp-nav" data-nav-skip="-5" title="5 pages back">-5</button>
@@ -100,7 +115,8 @@ class TVWP_Frontend {
                         </div>
                 </div>
             </div>',
-            esc_attr( $post_id )
+            esc_attr( $post_id ),
+            $height_attr
         );
     }
 }

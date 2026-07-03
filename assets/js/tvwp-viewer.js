@@ -1,7 +1,7 @@
 /**
  * Transcribus Viewer for WordPress
  *
- * @version 1.4.0
+ * @version 2.0.0
  */
 
 // This is the core initialization logic.
@@ -81,6 +81,7 @@ class TVWP_Viewer {
         this.totalPagesSpan = this.viewer.querySelector('.tvwp-total-pages');
         this.imagePane = this.viewer.querySelector('.tvwp-image-pane');
         this.imageWrapper = this.viewer.querySelector('.tvwp-image-wrapper');
+        this.mainContent = this.viewer.querySelector('.tvwp-main-content');
 
         // Zoom and pan state
         this.zoom = 1;
@@ -92,10 +93,35 @@ class TVWP_Viewer {
         this.startPanX = 0;
         this.startPanY = 0;
 
-        if (!this.image || !this.textPane || !this.controls || !this.imagePane || !this.imageWrapper) {
+        if (!this.image || !this.textPane || !this.controls || !this.imagePane || !this.imageWrapper || !this.mainContent) {
             console.error('TVWP Error: Viewer HTML structure is missing elements.', this.viewer);
             return;
         }
+
+        // A custom height (set via the block/shortcode) is applied as a direct
+        // inline style on the shared container here rather than through a CSS
+        // custom property, since a property only takes effect if the stylesheet
+        // defining `var(...)` is actually loaded in that context (unreliable
+        // inside the block editor's iframe canvas) - an inline style always
+        // applies regardless. The ResizeObserver set up in addEventListeners()
+        // below then propagates this container's real height to both panes
+        // directly (flexbox height:100% stretch proved unreliable here).
+        const customHeight = parseInt(this.viewer.dataset.tvwpHeight, 10);
+        this.hasCustomHeight = customHeight > 0;
+        this.hasAppliedDefaultHeight = false;
+        if (this.hasCustomHeight) {
+            this.mainContent.style.height = customHeight + 'px';
+        }
+
+        // Set by edit.js before calling initializeViewer(), never present on
+        // the frontend. In the block editor's narrower canvas, the panes
+        // wrap onto separate rows (each has its own min-width), so the image
+        // gets the full canvas width instead of sharing it with the text
+        // pane like it does side-by-side on the real page - fitting the
+        // default height to the image there produces a widget far taller
+        // than the same document ever needs on the frontend. Skip that
+        // calculation here and use a short fixed default instead.
+        this.isEditorPreview = this.viewer.dataset.tvwpEditorPreview === 'true';
 
         this.init();
     }
@@ -149,6 +175,21 @@ class TVWP_Viewer {
         });
 
         this.image.addEventListener('load', () => {
+            // Size the widget to fit the first page's image by default, rather
+            // than an arbitrary fixed/viewport-relative guess - this is also
+            // more robust than reading the container's CSS-computed height
+            // (which raced against the stylesheet loading in the block editor's
+            // iframe canvas and could lock in a tiny transient size). Only the
+            // very first page sets this, so navigating between pages of
+            // different aspect ratios doesn't keep resizing the widget.
+            if (!this.hasCustomHeight && !this.hasAppliedDefaultHeight) {
+                if (this.isEditorPreview) {
+                    this.applyFixedDefaultHeight();
+                } else {
+                    this.applyDefaultHeightFromImage();
+                }
+                this.hasAppliedDefaultHeight = true;
+            }
             this.drawOverlays();
         });
 
@@ -157,6 +198,42 @@ class TVWP_Viewer {
                 this.drawOverlays();
             }
         }, 250));
+
+        // The resize handle lives on .tvwp-main-content (the single shared
+        // container, at the widget's actual outer bottom-right corner).
+        // Relying on flexbox height:100% to make both panes stretch to fill
+        // it turned out not to hold up in real testing (confirmed via a live
+        // DOM dump: the container's own height changed correctly, its
+        // children's didn't), so apply its real computed height directly to
+        // both panes here instead. This fires for both a manual drag and a
+        // JS-driven height change (the block's height setting), and also
+        // covers redrawing the overlay, since dragging doesn't fire a window
+        // resize event.
+        if (window.ResizeObserver) {
+            const onMainContentResize = this.debounce(() => {
+                const observedHeight = this.mainContent.clientHeight;
+                // Guard against a transient/unsettled reading (e.g. taken
+                // before the block editor's iframe canvas or this stylesheet
+                // has actually applied) getting locked in as a real height -
+                // no legitimate configured or image-fitted height is outside
+                // this range, so skip it and wait for a later, real resize
+                // event. The upper bound guards against a degenerate/sentinel
+                // clientHeight reading (observed as exactly 2^24px) that can
+                // occur mid-reflow if something external resets this
+                // element's height right as it's being observed.
+                if (observedHeight < 100 || observedHeight > 5000) {
+                    return;
+                }
+                const height = observedHeight + 'px';
+                this.imagePane.style.height = height;
+                this.textPane.style.height = height;
+                if (this.pageData.lines) {
+                    this.drawOverlays();
+                }
+            }, 100);
+            this.resizeObserver = new ResizeObserver(onMainContentResize);
+            this.resizeObserver.observe(this.mainContent);
+        }
 
         this.textPane.addEventListener('mouseenter', this.handleHighlight.bind(this), true);
         this.textPane.addEventListener('mouseleave', this.handleHighlight.bind(this), true);
@@ -222,6 +299,70 @@ class TVWP_Viewer {
             console.error('TVWP LoadPage Error:', error, this.viewer);
             this.textPane.innerHTML = `<p>Error loading page ${this.currentPage}.</p>`;
         }
+    }
+
+    /**
+     * Editor-preview-only default (see isEditorPreview above): a short fixed
+     * height rather than fitting the image, since the editor's narrower
+     * canvas gives the image the full width instead of sharing it with the
+     * text pane, which would otherwise produce a widget far taller than the
+     * same document needs on the real page.
+     */
+    applyFixedDefaultHeight() {
+        const height = '500px';
+        this.mainContent.style.height = height;
+        this.imagePane.style.height = height;
+        this.textPane.style.height = height;
+    }
+
+    /**
+     * Sizes the widget to fit the image at its natural aspect ratio (scaled to
+     * the pane's current width) plus whatever padding/border the pane itself
+     * needs, so the default height fits the actual document instead of an
+     * arbitrary guess - and doesn't depend on any CSS height rule having
+     * already taken effect.
+     */
+    applyDefaultHeightFromImage(attempt = 0) {
+        const naturalWidth = this.image.naturalWidth;
+        const naturalHeight = this.image.naturalHeight;
+        const displayWidth = this.image.clientWidth;
+
+        if (!naturalWidth || !naturalHeight || !displayWidth) {
+            // The image's own box may not have been laid out yet (seen inside
+            // the block editor's iframe canvas right after new content is
+            // injected) - retry across a few frames instead of silently
+            // giving up, which left the ResizeObserver fallback in
+            // addEventListeners() to lock in whatever transient size existed
+            // at that moment.
+            if (attempt < 20) {
+                requestAnimationFrame(() => this.applyDefaultHeightFromImage(attempt + 1));
+            }
+            return;
+        }
+
+        const imageDisplayHeight = (naturalHeight / naturalWidth) * displayWidth;
+        const chrome = this.getPaneChromeHeight();
+        const target = Math.round(imageDisplayHeight + chrome);
+        const clamped = Math.min(Math.max(target, 200), 1400);
+        const height = clamped + 'px';
+
+        this.mainContent.style.height = height;
+        this.imagePane.style.height = height;
+        this.textPane.style.height = height;
+    }
+
+    /**
+     * The vertical padding/border a pane needs around its content, read from
+     * the stylesheet rather than hard-coded so this stays correct if the CSS
+     * changes.
+     */
+    getPaneChromeHeight() {
+        const styles = window.getComputedStyle(this.imagePane);
+        const paddingTop = parseFloat(styles.paddingTop) || 0;
+        const paddingBottom = parseFloat(styles.paddingBottom) || 0;
+        const borderTop = parseFloat(styles.borderTopWidth) || 0;
+        const borderBottom = parseFloat(styles.borderBottomWidth) || 0;
+        return paddingTop + paddingBottom + borderTop + borderBottom;
     }
 
     renderText() {

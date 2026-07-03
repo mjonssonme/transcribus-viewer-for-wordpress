@@ -3,10 +3,10 @@
  * Plugin Name:       Transcribus Viewer for WordPress
  * Plugin URI:        https://github.com/mjonssonme/transcribus-viewer-for-wordpress
  * Description:       Uploads Transkribus exports (ZIP) and displays them in an interactive viewer.
- * Version:           1.4.0
+ * Version:           2.0.0
  * Author:            Mattias Johnsson
  * Author URI:        https://mjonsson.me
- * Requires at least: 6.0
+ * Requires at least: 6.6
  * Requires PHP:      7.4
  * License:           GPL v2 or later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define Plugin Constants
-define( 'TVWP_VERSION', '1.4.0' );
+define( 'TVWP_VERSION', '2.0.0' );
 define( 'TVWP_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'TVWP_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 

@@ -76,13 +76,12 @@ class TVWP_Admin_Guide {
             
             <hr>
 
-            <h2>Step 3: Publish Your Document</h2>
+            <h2>Step 3: Your Document Is Published Automatically</h2>
             <ol>
                 <li>Go to <strong>Transkribus Docs &gt; All Documents</strong>.</li>
-                <li>After a minute, you will see your new document appear with the correct title, saved as a <strong>"Draft"</strong>.</li>
-                <li>Click "Edit" on the new document.</li>
-                <li>The main text editor will be <strong>pre-filled with the document description</strong> from your Transkribus metadata. You can edit this text or add your own introduction.</li>
-                <li>When you are ready, click the "Publish" button.</li>
+                <li>After a minute, you will see your new document appear with the correct title, already <strong>Published</strong> and live.</li>
+                <li>Click "Edit" on the document if you want to review or change anything.</li>
+                <li>The main text editor will be <strong>pre-filled with the document description</strong> from your Transkribus metadata. You can edit this text or add your own introduction - just click "Update" to save changes.</li>
             </ol>
 
             <hr>
@@ -101,6 +100,7 @@ class TVWP_Admin_Guide {
                 <li>Search for and select the <strong>"Transcribus Document"</strong> block.</li>
                 <li>In the block settings panel on the right, use the dropdown menu to select the document you just published.</li>
                 <li>The viewer will load directly in the editor as a live preview.</li>
+                <li>Optionally, turn on <strong>"Custom viewer height"</strong> in the settings panel to set a fixed height for the image/text panes - otherwise visitors can still drag the bottom-right corner of either pane to resize it themselves.</li>
                 <li>Save or Update your post.</li>
             </ol>
 

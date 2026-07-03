@@ -2,10 +2,10 @@
 Contributors: mattiasjohnsson
 Author: Mattias Johnsson
 Author URI: https://mjonsson.me
-Requires at least: 6.0
-Tested up to: 6.5
+Requires at least: 6.6
+Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.4.0
+Stable tag: 2.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -29,6 +29,26 @@ The viewer displays the document's description followed by the interactive image
 5.  Navigate to "Transkribus Docs" > "User Guide" for next steps.
 
 == Changelog ==
+
+= 2.0.0 =
+* Feat: The "Transcribus Document" block has a "Custom viewer height" toggle in its settings, letting you set a fixed pixel height for the image/text panes. Visitors can also drag the bottom-right corner of either pane to resize it themselves, whether or not a custom height is set.
+* Feat: Without a custom height, the viewer's default height fits the first page's actual image (at its real aspect ratio) instead of a fixed guess. In the block editor's own live preview specifically, a short fixed default (500px) is used instead, since the editor's narrower canvas would otherwise make the widget need a lot of scrolling just to see the whole thing while editing.
+* Fix: Resizing the panes (via the drag handle or a custom height change) reliably redraws the text-highlight overlay and keeps both panes and the block editor's preview in sync, including inside the editor's iframed canvas.
+* Feat: The upload page now shows a live progress notice and automatically redirects to the All Documents list once background processing finishes, instead of leaving you on a static "success" message with no feedback.
+* Fix: The "Used In" column (on the Transkribus Documents list) now covers documents referenced by any real, non-trashed post status (draft/pending/private/future), not just published ones.
+
+= 1.5.0 =
+* Feat: Deleting a Transkribus document (regardless of its status) now also deletes its attached page images, instead of leaving them behind as orphaned media library entries.
+* Feat: The "All Documents" list now shows a "Used In" column with a warning and links whenever a document is embedded (via block or shortcode) in a published post/page, so you don't accidentally delete something that's live elsewhere.
+
+= 1.4.2 =
+* Feat: Documents are now published automatically as soon as processing finishes, instead of being left in Draft waiting for a manual "Publish" click. You can still edit the auto-imported description afterward.
+* Fix: The Gutenberg block's live preview now actually renders inside the block editor (image/text/controls), instead of showing an empty shell until you hit Preview - the editor's iframed canvas meant the viewer script was watching the wrong document.
+* UX: Removed the default "Add New" submenu under Transkribus Docs - documents can only be created via ZIP upload, so that entry just led to a confusing blank post.
+
+= 1.4.1 =
+* Chore: Bumped `@wordpress/scripts` (v27 -> v32) and `@wordpress/server-side-render` to clear most remaining npm audit vulnerabilities in the block editor's build tooling (dev-only, nothing shipped to the live site was affected either way).
+* Compat: The new build's Gutenberg block depends on the `react-jsx-runtime` WordPress script, which core only provides since WP 6.6 - "Requires at least" and "Tested up to" bumped to 6.6 to reflect this. Only affects the block editor insertion experience, not the document viewer itself.
 
 = 1.4.0 =
 * Feat: Added "First" and "Last" page navigation buttons alongside the existing -5/Previous/Next/+5 controls.
