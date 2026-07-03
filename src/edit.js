@@ -29,26 +29,37 @@ export default function Edit( { attributes, setAttributes } ) {
 		let cancelled = false;
 		let attempts = 0;
 
-		// Custom height only: applied once here (not from inside tryInit below)
-		// so dragging the RangeControl updates the preview immediately, instead
-		// of waiting on ServerSideRender's own re-fetch. When there's no custom
-		// height, tvwp-viewer.js's own image-fit default is the only thing that
-		// should ever touch this - it used to be reset to '' here too on every
-		// call, but tryInit re-runs on every DOM mutation within the preview
-		// (including ones tvwp-viewer.js causes itself, like drawOverlays()
-		// adding SVG children on page load), so that reset kept firing moments
-		// after the real default had just been computed and wiping it out.
-		if ( customHeight ) {
-			const mainContentEl = previewRef.current.querySelector( '.tvwp-main-content' );
+		// Applied both up front and from inside tryInit below (on every DOM
+		// mutation within the preview - including ones tvwp-viewer.js causes
+		// itself, like drawOverlays() adding SVG children on page load), so
+		// it always wins regardless of timing: without a custom height,
+		// tvwp-viewer.js's own default fits the widget to the loaded image,
+		// which is correct on the real page but produces a much taller
+		// widget here, since the editor's narrower canvas gives the image
+		// the full canvas width instead of sharing it with the text pane
+		// like it does side by side on the real page. A data attribute read
+		// by tvwp-viewer.js before it computes that default is set below too
+		// as a first line of defense, but tvwp-viewer.js also auto-initializes
+		// any .tvwp-viewer it sees via its own MutationObserver - on a truly
+		// fresh block insertion that can win the race and construct the
+		// widget before the attribute is even set, and the one-time init
+		// guard means the flag arrives too late. Reapplying a real height
+		// directly on every mutation self-heals from that regardless of
+		// which side won.
+		const applyHeight = () => {
+			const mainContentEl = previewRef.current?.querySelector( '.tvwp-main-content' );
 			if ( mainContentEl ) {
-				mainContentEl.style.height = viewerHeight + 'px';
+				mainContentEl.style.height = ( customHeight ? viewerHeight : 500 ) + 'px';
 			}
-		}
+		};
+
+		applyHeight();
 
 		const tryInit = () => {
 			if ( cancelled || ! previewRef.current ) {
 				return;
 			}
+			applyHeight();
 			if ( typeof window.initializeViewer !== 'function' ) {
 				if ( attempts++ < 20 ) {
 					setTimeout( tryInit, 150 );
@@ -58,11 +69,6 @@ export default function Edit( { attributes, setAttributes } ) {
 			previewRef.current
 				.querySelectorAll( '.tvwp-viewer' )
 				.forEach( ( el ) => {
-					// Read by tvwp-viewer.js before it computes a default
-					// height - the editor's narrower canvas makes the
-					// image-fit default (used on the real page) produce a
-					// much taller widget than the document needs, so it
-					// falls back to a short fixed height here instead.
 					el.dataset.tvwpEditorPreview = 'true';
 					window.initializeViewer( el );
 				} );
@@ -71,7 +77,17 @@ export default function Edit( { attributes, setAttributes } ) {
 		tryInit();
 
 		const observer = new MutationObserver( tryInit );
-		observer.observe( previewRef.current, { childList: true, subtree: true } );
+		// attributes/style watches for tvwp-viewer.js's own height changes
+		// specifically - its default-height calculation can retry
+		// asynchronously (requestAnimationFrame) if the image isn't
+		// measurable on the first try, which sets a height later without
+		// adding/removing any child node, so childList alone can miss it.
+		observer.observe( previewRef.current, {
+			childList: true,
+			subtree: true,
+			attributes: true,
+			attributeFilter: [ 'style' ],
+		} );
 
 		return () => {
 			cancelled = true;

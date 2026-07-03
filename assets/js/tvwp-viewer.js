@@ -1,7 +1,7 @@
 /**
  * Transcribus Viewer for WordPress
  *
- * @version 1.8.6
+ * @version 1.8.7
  */
 
 // This is the core initialization logic.

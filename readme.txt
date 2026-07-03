@@ -5,7 +5,7 @@ Author URI: https://mjonsson.me
 Requires at least: 6.6
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.8.6
+Stable tag: 1.8.7
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -29,6 +29,9 @@ The viewer displays the document's description followed by the interactive image
 5.  Navigate to "Transkribus Docs" > "User Guide" for next steps.
 
 == Changelog ==
+
+= 1.8.7 =
+* Fix: 1.8.6's short editor-default height was confirmed working on already-saved posts reopened for editing, but a truly fresh block insertion (a brand new, never-saved post) could still show the tall image-fit height. Root cause: tvwp-viewer.js auto-initializes any `.tvwp-viewer` it sees via its own MutationObserver, which can win the race against edit.js setting its "use a short default here" flag on a fresh insert - the one-time init guard then means the flag arrives too late. Compounding this, tvwp-viewer.js's default-height calculation can retry asynchronously if the image isn't measurable on the first try, setting a (tall) height later without adding/removing any child node - invisible to a childList-only mutation watcher. edit.js now also watches for style-attribute changes directly and reapplies its intended height immediately whenever anything changes it, self-healing regardless of which side won the initial race or when the tall value gets set.
 
 = 1.8.6 =
 * Feat: In the block editor preview specifically (default/no-custom-height case), the widget now uses a short fixed default height (500px) instead of fitting to the image. Live testing confirmed the panes were actually rendering correctly all along (verified via dev tools: correctly sized and positioned) - the "broken" appearance was really just the image-fit calculation legitimately producing a very tall widget (~1400px) in the editor's narrower canvas, where the image gets the full canvas width instead of sharing it with the text pane like it does side-by-side on the real page. That made the editor need a lot of scrolling/zooming just to see the whole widget while editing. The real page's default height calculation (image-fit) is unchanged.
