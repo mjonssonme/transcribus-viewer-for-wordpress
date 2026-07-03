@@ -5,7 +5,7 @@ Author URI: https://mjonsson.me
 Requires at least: 6.6
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.4.2
+Stable tag: 1.5.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -29,6 +29,10 @@ The viewer displays the document's description followed by the interactive image
 5.  Navigate to "Transkribus Docs" > "User Guide" for next steps.
 
 == Changelog ==
+
+= 1.5.0 =
+* Feat: Deleting a Transkribus document (regardless of its status) now also deletes its attached page images, instead of leaving them behind as orphaned media library entries.
+* Feat: The "All Documents" list now shows a "Used In" column with a warning and links whenever a document is embedded (via block or shortcode) in a published post/page, so you don't accidentally delete something that's live elsewhere.
 
 = 1.4.2 =
 * Feat: Documents are now published automatically as soon as processing finishes, instead of being left in Draft waiting for a manual "Publish" click. You can still edit the auto-imported description afterward.

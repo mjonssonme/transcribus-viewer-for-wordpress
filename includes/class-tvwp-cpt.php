@@ -12,6 +12,13 @@ class TVWP_CPT {
 
     private static $instance = null;
 
+    /**
+     * Lazily-built map of document post ID => array of published post IDs that
+     * embed it (via block or shortcode), cached for the life of the request so
+     * the admin list table only computes it once regardless of row count.
+     */
+    private $usage_map = null;
+
     public static function get_instance() {
         if ( null === self::$instance ) {
             self::$instance = new self();
@@ -22,6 +29,10 @@ class TVWP_CPT {
     private function __construct() {
         add_action( 'init', [ $this, 'register_cpt' ] );
         add_action( 'admin_menu', [ $this, 'remove_add_new_submenu' ], 999 );
+        add_action( 'before_delete_post', [ $this, 'cleanup_document_resources' ] );
+
+        add_filter( 'manage_transkribus_document_posts_columns', [ $this, 'add_usage_column' ] );
+        add_action( 'manage_transkribus_document_posts_custom_column', [ $this, 'render_usage_column' ], 10, 2 );
     }
 
     /**
@@ -31,6 +42,128 @@ class TVWP_CPT {
      */
     public function remove_add_new_submenu() {
         remove_submenu_page( 'edit.php?post_type=transkribus_document', 'post-new.php?post_type=transkribus_document' );
+    }
+
+    /**
+     * Deletes attached media (page images) when a Transkribus document is permanently
+     * deleted, regardless of its status, so removing a document doesn't leave orphaned
+     * attachments behind. Postmeta (_page_data_*, _page_count) is cleaned up automatically
+     * by WordPress core when the post row itself is deleted.
+     */
+    public function cleanup_document_resources( $post_id ) {
+        if ( get_post_type( $post_id ) !== 'transkribus_document' ) {
+            return;
+        }
+
+        $attachment_ids = get_posts( [
+            'post_type'      => 'attachment',
+            'post_parent'    => $post_id,
+            'posts_per_page' => -1,
+            'post_status'    => 'any',
+            'fields'         => 'ids',
+        ] );
+
+        foreach ( $attachment_ids as $attachment_id ) {
+            wp_delete_attachment( $attachment_id, true );
+        }
+    }
+
+    /**
+     * Adds a "Used In" column to the Transkribus Documents list table, so an admin
+     * can see - before deleting a document - whether any published post/page still
+     * embeds it via the block or the shortcode.
+     */
+    public function add_usage_column( $columns ) {
+        $columns['tvwp_usage'] = __( 'Used In', 'tvwp' );
+        return $columns;
+    }
+
+    public function render_usage_column( $column, $post_id ) {
+        if ( $column !== 'tvwp_usage' ) {
+            return;
+        }
+
+        $using_post_ids = $this->get_usage_map()[ (int) $post_id ] ?? [];
+
+        if ( empty( $using_post_ids ) ) {
+            echo '&#8212;';
+            return;
+        }
+
+        $links = [];
+        foreach ( $using_post_ids as $using_post_id ) {
+            $links[] = '<a href="' . esc_url( get_edit_post_link( $using_post_id ) ) . '">' . esc_html( get_the_title( $using_post_id ) ) . '</a>';
+        }
+
+        printf(
+            '<span style="color:#d63638;font-weight:600;" title="%s">&#9888; %s</span>',
+            esc_attr__( 'Deleting this document will break these published posts.', 'tvwp' ),
+            implode( ', ', $links )
+        );
+    }
+
+    /**
+     * Scans published posts for the tvwp/document-viewer block or the
+     * [transkribus_viewer] shortcode, mapping each referenced document ID to the
+     * posts that use it. Computed once per request and cached.
+     */
+    private function get_usage_map() {
+        if ( $this->usage_map !== null ) {
+            return $this->usage_map;
+        }
+
+        global $wpdb;
+
+        $this->usage_map = [];
+
+        $candidates = $wpdb->get_results(
+            "SELECT ID, post_content FROM {$wpdb->posts}
+             WHERE post_status = 'publish'
+             AND ( post_content LIKE '%tvwp/document-viewer%' OR post_content LIKE '%transkribus_viewer%' )"
+        );
+
+        foreach ( $candidates as $candidate ) {
+            foreach ( $this->extract_referenced_document_ids( $candidate->post_content ) as $document_id ) {
+                $this->usage_map[ $document_id ][] = (int) $candidate->ID;
+            }
+        }
+
+        return $this->usage_map;
+    }
+
+    private function extract_referenced_document_ids( $content ) {
+        $ids = [];
+
+        if ( has_block( 'tvwp/document-viewer', $content ) ) {
+            foreach ( parse_blocks( $content ) as $block ) {
+                $this->collect_block_document_ids( $block, $ids );
+            }
+        }
+
+        if ( has_shortcode( $content, 'transkribus_viewer' ) ) {
+            if ( preg_match_all( '/' . get_shortcode_regex( [ 'transkribus_viewer' ] ) . '/s', $content, $matches ) ) {
+                foreach ( $matches[3] as $atts_string ) {
+                    $atts = shortcode_parse_atts( $atts_string );
+                    if ( isset( $atts['id'] ) ) {
+                        $ids[] = (int) $atts['id'];
+                    }
+                }
+            }
+        }
+
+        return array_unique( $ids );
+    }
+
+    private function collect_block_document_ids( $block, array &$ids ) {
+        if ( isset( $block['blockName'], $block['attrs']['documentId'] ) && $block['blockName'] === 'tvwp/document-viewer' ) {
+            $ids[] = (int) $block['attrs']['documentId'];
+        }
+
+        if ( ! empty( $block['innerBlocks'] ) ) {
+            foreach ( $block['innerBlocks'] as $inner_block ) {
+                $this->collect_block_document_ids( $inner_block, $ids );
+            }
+        }
     }
 
     public function register_cpt() {
