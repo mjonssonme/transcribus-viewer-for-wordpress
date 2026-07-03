@@ -59,6 +59,12 @@ class TVWP_Admin_Upload {
             return;
         }
 
+        // Nonces guard against CSRF, not authorization - explicitly require the capability too.
+        if ( ! current_user_can( 'manage_options' ) ) {
+            $this->redirect_with_notice( 'error', 'capability' );
+            return;
+        }
+
         if ( ! wp_verify_nonce( $_POST['tvwp_nonce'], 'tvwp_upload_zip' ) ) {
             $this->redirect_with_notice( 'error', 'nonce' );
             return;
@@ -69,8 +75,10 @@ class TVWP_Admin_Upload {
             return;
         }
 
-        $file_type = $_FILES['tvwp_zip_file']['type'];
-        if ( $file_type !== 'application/zip' && $file_type !== 'application/x-zip-compressed' ) {
+        // The browser-supplied 'type' field is client-controlled and trivially spoofed, so
+        // verify the file extension and, once uploaded, the actual ZIP magic bytes below.
+        $filetype = wp_check_filetype( $_FILES['tvwp_zip_file']['name'], [ 'zip' => 'application/zip' ] );
+        if ( $filetype['ext'] !== 'zip' ) {
             $this->redirect_with_notice( 'error', 'type' );
             return;
         }
@@ -108,6 +116,15 @@ class TVWP_Admin_Upload {
             return;
         }
 
+        // Verify the actual file content is a ZIP archive - the extension/MIME checks above
+        // only look at attacker-controlled metadata, not the bytes that were actually uploaded.
+        if ( ! $this->is_zip_file( $temp_zip_path ) ) {
+            wp_delete_post( $post_id, true );
+            unlink( $temp_zip_path );
+            $this->redirect_with_notice( 'error', 'type' );
+            return;
+        }
+
         // 4. Schedule the asynchronous background task
         try {
             as_schedule_single_action(
@@ -123,6 +140,22 @@ class TVWP_Admin_Upload {
         }
         
         $this->redirect_with_notice( 'success', 'processing' );
+    }
+
+    /**
+     * Checks the actual uploaded bytes for a ZIP local-file-header or end-of-central-directory
+     * signature, since the client-supplied filename/MIME type can't be trusted.
+     */
+    private function is_zip_file( $path ) {
+        $handle = fopen( $path, 'rb' );
+        if ( ! $handle ) {
+            return false;
+        }
+        $signature = fread( $handle, 4 );
+        fclose( $handle );
+
+        $zip_signatures = [ "PK\x03\x04", "PK\x05\x06", "PK\x07\x08" ];
+        return in_array( $signature, $zip_signatures, true );
     }
 
     private function redirect_with_notice( $type, $code ) {
@@ -147,6 +180,7 @@ class TVWP_Admin_Upload {
             $message = __( 'File upload successful! The document is now processing in the background. It will be published automatically when complete.', 'tvwp' );
         } elseif ( $type === 'error' ) {
             switch ( $code ) {
+                case 'capability': $message = __( 'You do not have permission to upload documents.', 'tvwp' ); break;
                 case 'nonce': $message = __( 'Security check failed. Please try again.', 'tvwp' ); break;
                 case 'file': $message = __( 'No file was uploaded or an error occurred.', 'tvwp' ); break;
                 case 'type': $message = __( 'Invalid file type. Please upload a .zip file.', 'tvwp' ); break;

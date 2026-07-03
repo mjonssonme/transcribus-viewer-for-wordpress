@@ -33,6 +33,7 @@ class TVWP_Async_Processor {
             $zip->close();
         } else {
             $this->fail_post( $post_id, 'Failed to open ZIP file.' );
+            $this->cleanup( $zip_path, $unzip_dir );
             return;
         }
 
@@ -48,7 +49,7 @@ class TVWP_Async_Processor {
         
         try {
             // Load METS XML
-            $mets_xml = simplexml_load_file( $mets_path );
+            $mets_xml = $this->load_xml_safely( $mets_path );
             if ($mets_xml === false) {
                 $this->fail_post( $post_id, 'Failed to parse mets.xml.' );
                 $this->cleanup( $zip_path, $unzip_dir );
@@ -65,7 +66,7 @@ class TVWP_Async_Processor {
             $doc_description = '';
             $metadata_path = $content_root . '/metadata.xml';
             if ( file_exists( $metadata_path ) ) {
-                $metadata_xml = simplexml_load_file( $metadata_path );
+                $metadata_xml = $this->load_xml_safely( $metadata_path );
                 if ( $metadata_xml && isset( $metadata_xml->desc ) ) {
                     // Clean up the description text
                     $doc_description = trim( (string) $metadata_xml->desc );
@@ -92,8 +93,8 @@ class TVWP_Async_Processor {
             $page_divs = $mets_xml->xpath('//ns3:structMap[@TYPE="MANUSCRIPT"]//ns3:div[@TYPE="SINGLE_PAGE"]');
 
             if (empty($page_divs)) {
-                $this.fail_post( $post_id, 'No pages with TYPE="SINGLE_PAGE" found in mets.xml.' );
-                $this.cleanup( $zip_path, $unzip_dir );
+                $this->fail_post( $post_id, 'No pages with TYPE="SINGLE_PAGE" found in mets.xml.' );
+                $this->cleanup( $zip_path, $unzip_dir );
                 return;
             }
 
@@ -106,9 +107,10 @@ class TVWP_Async_Processor {
                     $file_id = (string)$fptr->attributes()->FILEID;
                     if (isset($file_id_map[$file_id])) {
                         $file_href = $file_id_map[$file_id];
-                        if (strpos($file_href, '.xml') !== false) {
+                        $extension = strtolower( pathinfo( $file_href, PATHINFO_EXTENSION ) );
+                        if ( $extension === 'xml' ) {
                             $page_files['xml'] = $file_href;
-                        } elseif (strpos($file_href, '.jpg') !== false || strpos($file_href, '.png') !== false) {
+                        } elseif ( in_array( $extension, [ 'jpg', 'jpeg', 'png' ], true ) ) {
                             $page_files['img'] = $file_href;
                         }
                     }
@@ -118,11 +120,11 @@ class TVWP_Async_Processor {
             ksort( $page_map, SORT_NUMERIC );
 
             foreach ( $page_map as $page_num => $files ) {
-                $image_path = $content_root . '/' . $files['img'];
-                $xml_path = $content_root . '/' . $files['xml'];
+                $image_path = empty( $files['img'] ) ? false : $this->resolve_safe_path( $content_root, $files['img'] );
+                $xml_path   = empty( $files['xml'] ) ? false : $this->resolve_safe_path( $content_root, $files['xml'] );
 
-                if ( empty($files['img']) || empty($files['xml']) || ! file_exists( $image_path ) || ! file_exists( $xml_path ) ) {
-                    error_log("TVWP: Missing file for page $page_num. Img: {$files['img']}, XML: {$files['xml']}");
+                if ( ! $image_path || ! $xml_path ) {
+                    error_log("TVWP: Missing or unsafe file reference for page $page_num. Img: {$files['img']}, XML: {$files['xml']}");
                     continue;
                 }
 
@@ -132,7 +134,8 @@ class TVWP_Async_Processor {
 
                 // Switch to DOMDocument for robust Page XML parsing
                 $page_dom = new DOMDocument();
-                @$page_dom->load( $xml_path );
+                $this->guard_xml_entity_loading();
+                @$page_dom->load( $xml_path, LIBXML_NONET );
                 $page_xpath = new DOMXPath( $page_dom );
                 
                 $page_node_list = $page_xpath->query( "//*[local-name()='Page']" );
@@ -187,6 +190,54 @@ class TVWP_Async_Processor {
         }
 
         $this->cleanup( $zip_path, $unzip_dir );
+    }
+
+    /**
+     * Loads an XML file with external entity resolution explicitly disabled (defense-in-depth
+     * against XXE). Modern libxml (>=2.9, bundled with PHP 7.4+) already disables external
+     * entity loading by default, but we pin it explicitly rather than rely on that default.
+     */
+    private function load_xml_safely( $path ) {
+        $this->guard_xml_entity_loading();
+        $contents = file_get_contents( $path );
+        if ( $contents === false || $contents === '' ) {
+            return false;
+        }
+        return simplexml_load_string( $contents, 'SimpleXMLElement', LIBXML_NONET );
+    }
+
+    private function guard_xml_entity_loading() {
+        if ( PHP_VERSION_ID < 80000 && function_exists( 'libxml_disable_entity_loader' ) ) {
+            libxml_disable_entity_loader( true );
+        }
+    }
+
+    /**
+     * Resolves a METS-referenced relative path against the extracted ZIP root and verifies
+     * the result is still contained within that root, to block path traversal via a crafted
+     * mets.xml FLocat href (e.g. "../../../etc/passwd.jpg").
+     */
+    private function resolve_safe_path( $content_root, $relative_href ) {
+        if ( empty( $relative_href ) ) {
+            return false;
+        }
+
+        $real_root = realpath( $content_root );
+        if ( $real_root === false ) {
+            return false;
+        }
+
+        $candidate = $real_root . DIRECTORY_SEPARATOR . ltrim( $relative_href, '/\\' );
+        $real_candidate = realpath( $candidate );
+        if ( $real_candidate === false ) {
+            return false;
+        }
+
+        if ( strpos( $real_candidate, $real_root . DIRECTORY_SEPARATOR ) !== 0 ) {
+            return false;
+        }
+
+        return $real_candidate;
     }
 
     private function find_mets_file( $dir ) {

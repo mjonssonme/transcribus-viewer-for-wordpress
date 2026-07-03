@@ -5,7 +5,7 @@ Author URI: https://mjonsson.me
 Requires at least: 6.0
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 1.3.0
+Stable tag: 1.3.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -29,6 +29,18 @@ The viewer displays the document's description followed by the interactive image
 5.  Navigate to "Transkribus Docs" > "User Guide" for next steps.
 
 == Changelog ==
+
+= 1.3.1 =
+* Security: Escaped/DOM-safe rendering of transcribed line text and IDs in the viewer, closing a stored XSS vector.
+* Security: REST API no longer serves page/TOC data for documents that aren't published (draft/processing/failed are now 404).
+* Security: Upload handler now requires the `manage_options` capability independently of the nonce check.
+* Security: Blocked path traversal via crafted `mets.xml` file references; extension matching is now anchored instead of substring-based.
+* Security: Upload now verifies actual ZIP file signature instead of trusting the client-supplied file type.
+* Security: Hardened XML parsing against XXE by explicitly disabling external entity loading.
+* Fix: Corrected a typo (`$this.` instead of `$this->`) that caused a fatal error when a `mets.xml` had no `SINGLE_PAGE` divs.
+* Fix: Temp upload files are now always cleaned up, including when the ZIP fails to open.
+* Housekeeping: Removed debug console logging from the frontend viewer script.
+* Housekeeping: De-duplicated viewer markup between the shortcode/block renderer and the single-document template.
 
 = 1.3.0 =
 * Feat: Added zoom functionality using mouse scroll wheel (1x-5x zoom range).
