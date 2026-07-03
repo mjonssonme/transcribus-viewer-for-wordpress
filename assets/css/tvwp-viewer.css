@@ -10,13 +10,6 @@
     display: flex;
     flex-wrap: wrap; /* Allow stacking on small screens */
     border-top: 1px solid #ddd;
-    /* A fixed (not max-) height so increasing it actually grows the panes,
-       not just caps them - and one resize handle here controls both panes
-       at once (each pane fills 100% of this height), instead of each pane
-       having its own independent handle. */
-    height: var(--tvwp-pane-height, 50vh);
-    resize: vertical;
-    overflow: hidden;
 }
 
 /* Image Pane */
@@ -27,10 +20,15 @@
     position: relative;
     padding: 10px;
     border-right: 1px solid #ddd;
-    height: 100%;
+    /* A fixed (not max-) height so increasing it actually grows the pane, not
+       just caps it. This is the only pane with the native resize handle -
+       tvwp-viewer.js keeps the text pane's height in sync with it via
+       ResizeObserver, since a flex child's height:100% under a resized flex
+       parent only reliably shrinks, not grows, in practice. */
+    height: var(--tvwp-pane-height, 50vh);
     overflow: auto;
-    /* Prevent scrollbars from affecting zoom calculations */
     box-sizing: border-box;
+    resize: vertical;
 }
 
 .tvwp-image-wrapper {
@@ -92,7 +90,8 @@
     background: #fff;
     font-family: 'Times New Roman', Times, serif;
     line-height: 1.6;
-    height: 100%;
+    /* Kept in sync with .tvwp-image-pane's actual height by tvwp-viewer.js. */
+    height: var(--tvwp-pane-height, 50vh);
     overflow-y: auto;
     box-sizing: border-box;
 }

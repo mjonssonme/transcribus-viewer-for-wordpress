@@ -5,7 +5,7 @@ Author URI: https://mjonsson.me
 Requires at least: 6.6
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.7.0
+Stable tag: 1.7.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -29,6 +29,9 @@ The viewer displays the document's description followed by the interactive image
 5.  Navigate to "Transkribus Docs" > "User Guide" for next steps.
 
 == Changelog ==
+
+= 1.7.1 =
+* Fix: The 1.7.0 height fix put the fixed height and resize handle on the wrapping container and relied on the image/text panes stretching to fill it via `height:100%` - that only reliably shrinks, not grows, in real browsers, so the height setting (and drag-resizing) still didn't visibly grow the panes. The height and resize handle now live directly on the image pane, with the text pane's height kept in sync via JS (ResizeObserver) instead of CSS stretching - this reflects both the block's height setting and manual dragging correctly in both directions.
 
 = 1.7.0 =
 * Feat: The upload page now shows a live progress notice and automatically redirects to the All Documents list once background processing finishes, instead of leaving you on a static "success" message with no feedback.

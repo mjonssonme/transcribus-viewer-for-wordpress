@@ -1,7 +1,7 @@
 /**
  * Transcribus Viewer for WordPress
  *
- * @version 1.7.0
+ * @version 1.7.1
  */
 
 // This is the core initialization logic.
@@ -158,15 +158,20 @@ class TVWP_Viewer {
             }
         }, 250));
 
-        // Dragging the pane's native resize handle changes its box size without
-        // firing a window resize event, so the overlay never redrew on drag/release.
+        // Only the image pane has the native resize handle (one handle for both
+        // panes, instead of each having its own). Keep the text pane's height in
+        // sync with it - this also fires for CSS-var-driven height changes (the
+        // block's height setting), not just manual drags - and redraw the
+        // overlay, since dragging changes the box size without firing a window
+        // resize event, so the overlay never redrew on drag/release before.
         if (window.ResizeObserver) {
-            const redrawOnResize = this.debounce(() => {
+            const onImagePaneResize = this.debounce(() => {
+                this.textPane.style.height = this.imagePane.clientHeight + 'px';
                 if (this.pageData.lines) {
                     this.drawOverlays();
                 }
             }, 100);
-            this.resizeObserver = new ResizeObserver(redrawOnResize);
+            this.resizeObserver = new ResizeObserver(onImagePaneResize);
             this.resizeObserver.observe(this.imagePane);
         }
 
