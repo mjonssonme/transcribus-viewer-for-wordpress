@@ -56,7 +56,7 @@ class TVWP_Rest_Api {
     public function get_toc( $request ) {
         $post_id = (int) $request['post_id'];
 
-        if ( ! $this->is_publicly_readable( $post_id ) ) {
+        if ( ! $this->is_readable( $post_id ) ) {
             return new WP_Error( 'tvwp_no_toc', 'Document data not found.', [ 'status' => 404 ] );
         }
 
@@ -73,7 +73,7 @@ class TVWP_Rest_Api {
         $post_id = (int) $request['post_id'];
         $page_num = (int) $request['page_num'];
 
-        if ( ! $this->is_publicly_readable( $post_id ) ) {
+        if ( ! $this->is_readable( $post_id ) ) {
             return new WP_Error( 'tvwp_no_page', 'Page data not found.', [ 'status' => 404 ] );
         }
 
@@ -87,13 +87,18 @@ class TVWP_Rest_Api {
     }
 
     /**
-     * Only publicly published documents are readable via these unauthenticated endpoints;
-     * drafts/processing/failed documents must not leak content before the owner publishes them.
+     * Published documents are readable by anyone (matches the public frontend/shortcode).
+     * Unpublished documents (draft/processing/failed) are only readable by users who could
+     * also edit the CPT (e.g. previewing before publishing) - never by anonymous requests,
+     * which is what closed the original information-disclosure issue.
      */
-    private function is_publicly_readable( $post_id ) {
+    private function is_readable( $post_id ) {
         if ( get_post_type( $post_id ) !== 'transkribus_document' ) {
             return false;
         }
-        return get_post_status( $post_id ) === 'publish';
+        if ( is_post_publicly_viewable( $post_id ) ) {
+            return true;
+        }
+        return current_user_can( 'read_post', $post_id );
     }
 }

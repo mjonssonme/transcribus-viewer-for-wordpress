@@ -5,7 +5,7 @@ Author URI: https://mjonsson.me
 Requires at least: 6.0
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 1.3.1
+Stable tag: 1.3.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -29,6 +29,10 @@ The viewer displays the document's description followed by the interactive image
 5.  Navigate to "Transkribus Docs" > "User Guide" for next steps.
 
 == Changelog ==
+
+= 1.3.2 =
+* Fix: Draft/unpublished documents can no longer be previewed by the logged-in admin via the viewer - the 1.3.1 REST lockdown was stricter than intended. Unpublished documents are now readable by users who could edit them (matches core WordPress preview behavior), while remaining blocked for anonymous requests.
+* Fix: The viewer's REST requests now actually send the WordPress REST nonce, which they never did before - required for the above preview fix to work, and generally more correct.
 
 = 1.3.1 =
 * Security: Escaped/DOM-safe rendering of transcribed line text and IDs in the viewer, closing a stored XSS vector.

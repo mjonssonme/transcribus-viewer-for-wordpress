@@ -1,7 +1,7 @@
 /**
  * Transcribus Viewer for WordPress
  *
- * @version 1.3.1
+ * @version 1.3.2
  */
 
 // This is the core initialization logic.
@@ -66,6 +66,7 @@ class TVWP_Viewer {
         this.viewer = element;
         this.postId = this.viewer.dataset.postId;
         this.restUrl = tvwp_data.rest_url;
+        this.nonce = tvwp_data.nonce;
         this.i18n = tvwp_data.i18n;
 
         this.currentPage = 1;
@@ -104,7 +105,7 @@ class TVWP_Viewer {
 
         try {
             const tocUrl = `${this.restUrl}tvwp/v1/document/${this.postId}/toc`;
-            const tocResponse = await fetch(tocUrl);
+            const tocResponse = await fetch(tocUrl, { headers: { 'X-WP-Nonce': this.nonce } });
             if (!tocResponse.ok) {
                 throw new Error(`Could not load TOC. Server responded ${tocResponse.status}`);
             }
@@ -199,7 +200,7 @@ class TVWP_Viewer {
 
         try {
             const pageUrl = `${this.restUrl}tvwp/v1/document/${this.postId}/page/${this.currentPage}`;
-            const pageResponse = await fetch(pageUrl);
+            const pageResponse = await fetch(pageUrl, { headers: { 'X-WP-Nonce': this.nonce } });
             if (!pageResponse.ok) {
                 throw new Error(`Could not load page data. Server responded ${pageResponse.status}`);
             }
