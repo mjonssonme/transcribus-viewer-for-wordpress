@@ -5,7 +5,7 @@ Author URI: https://mjonsson.me
 Requires at least: 6.6
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.7.4
+Stable tag: 1.7.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -29,6 +29,9 @@ The viewer displays the document's description followed by the interactive image
 5.  Navigate to "Transkribus Docs" > "User Guide" for next steps.
 
 == Changelog ==
+
+= 1.7.5 =
+* Fix: A DOM inspection confirmed the shared container was correctly getting its inline height (500px in the test case) in both the editor and the saved page, but the image/text panes still didn't grow to match - the flexbox `height:100%` stretch this relied on wasn't holding up in practice. `tvwp-viewer.js` now watches the container's real computed height and applies it directly to both panes as an inline style, instead of depending on CSS stretch.
 
 = 1.7.4 =
 * Fix: Dragging the resize handle changed the text pane's height but left the image pane frozen at its initial size - the two panes were being kept in sync via JS (one observed, the other copied), which proved unreliable. Simplified to a single source of truth: the shared container around both panes now owns the height (applied as a direct inline style, or via the native resize drag), and both panes simply fill it at 100% - standard flexbox behavior, no more JS syncing between the two panes.

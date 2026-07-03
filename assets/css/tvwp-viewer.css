@@ -10,14 +10,12 @@
     display: flex;
     flex-wrap: wrap; /* Allow stacking on small screens */
     border-top: 1px solid #ddd;
-    /* Single source of truth for the widget's height: a default here, or a
-       direct inline style set by tvwp-viewer.js for a custom height (not a
-       CSS custom property - that depends on the stylesheet defining var(...)
-       actually being in effect wherever this renders, which isn't reliable
-       inside the block editor's iframe canvas). Both panes below simply fill
-       this via height:100%, standard flexbox stretch - no separate syncing
-       between the two panes needed. This is also the single resize handle
-       for the whole widget, at its actual outer bottom-right corner. */
+    /* The single resize handle for the whole widget lives here, at its actual
+       outer bottom-right corner. tvwp-viewer.js watches this element's real
+       computed height (via ResizeObserver) and applies it directly to both
+       panes below - relying on flexbox height:100% stretch to do that
+       reliably turned out not to hold up in real testing, so this is a
+       deliberate, verified-working direct-JS approach instead. */
     height: 50vh;
     resize: vertical;
     overflow: hidden;
@@ -31,7 +29,9 @@
     position: relative;
     padding: 10px;
     border-right: 1px solid #ddd;
-    height: 100%;
+    /* Default height; kept in sync with .tvwp-main-content's real height by
+       tvwp-viewer.js (see that file's ResizeObserver). */
+    height: 50vh;
     overflow: auto;
     box-sizing: border-box;
 }
@@ -95,7 +95,9 @@
     background: #fff;
     font-family: 'Times New Roman', Times, serif;
     line-height: 1.6;
-    height: 100%;
+    /* Default height; kept in sync with .tvwp-main-content's real height by
+       tvwp-viewer.js (see that file's ResizeObserver). */
+    height: 50vh;
     overflow-y: auto;
     box-sizing: border-box;
 }

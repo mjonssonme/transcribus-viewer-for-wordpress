@@ -1,7 +1,7 @@
 /**
  * Transcribus Viewer for WordPress
  *
- * @version 1.7.4
+ * @version 1.7.5
  */
 
 // This is the core initialization logic.
@@ -103,8 +103,9 @@ class TVWP_Viewer {
         // custom property, since a property only takes effect if the stylesheet
         // defining `var(...)` is actually loaded in that context (unreliable
         // inside the block editor's iframe canvas) - an inline style always
-        // applies regardless. Both panes fill it via height:100% in the
-        // stylesheet, so they don't need any JS-side syncing with each other.
+        // applies regardless. The ResizeObserver set up in addEventListeners()
+        // below then propagates this container's real height to both panes
+        // directly (flexbox height:100% stretch proved unreliable here).
         const customHeight = parseInt(this.viewer.dataset.tvwpHeight, 10);
         if (customHeight > 0) {
             this.mainContent.style.height = customHeight + 'px';
@@ -172,19 +173,25 @@ class TVWP_Viewer {
         }, 250));
 
         // The resize handle lives on .tvwp-main-content (the single shared
-        // container, at the widget's actual outer bottom-right corner) - both
-        // panes just fill it via height:100% in the stylesheet, no per-pane JS
-        // syncing needed. Dragging it doesn't fire a window resize event, so
-        // redraw the overlay directly on it (a vertical-only resize doesn't
-        // actually change the image's width/scale, but this is a safe no-op
-        // in that case and covers window resizes that also affect it).
+        // container, at the widget's actual outer bottom-right corner).
+        // Relying on flexbox height:100% to make both panes stretch to fill
+        // it turned out not to hold up in real testing (confirmed via a live
+        // DOM dump: the container's own height changed correctly, its
+        // children's didn't), so apply its real computed height directly to
+        // both panes here instead. This fires for both a manual drag and a
+        // JS-driven height change (the block's height setting), and also
+        // covers redrawing the overlay, since dragging doesn't fire a window
+        // resize event.
         if (window.ResizeObserver) {
-            const onResize = this.debounce(() => {
+            const onMainContentResize = this.debounce(() => {
+                const height = this.mainContent.clientHeight + 'px';
+                this.imagePane.style.height = height;
+                this.textPane.style.height = height;
                 if (this.pageData.lines) {
                     this.drawOverlays();
                 }
             }, 100);
-            this.resizeObserver = new ResizeObserver(onResize);
+            this.resizeObserver = new ResizeObserver(onMainContentResize);
             this.resizeObserver.observe(this.mainContent);
         }
 
