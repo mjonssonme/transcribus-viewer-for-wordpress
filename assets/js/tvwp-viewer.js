@@ -1,7 +1,7 @@
 /**
  * Transcribus Viewer for WordPress
  *
- * @version 1.7.1
+ * @version 1.7.2
  */
 
 // This is the core initialization logic.
@@ -158,21 +158,22 @@ class TVWP_Viewer {
             }
         }, 250));
 
-        // Only the image pane has the native resize handle (one handle for both
-        // panes, instead of each having its own). Keep the text pane's height in
-        // sync with it - this also fires for CSS-var-driven height changes (the
-        // block's height setting), not just manual drags - and redraw the
-        // overlay, since dragging changes the box size without firing a window
-        // resize event, so the overlay never redrew on drag/release before.
+        // Only the text pane has the native resize handle (one handle for both
+        // panes, at the outer bottom-right corner of the widget, instead of each
+        // pane having its own). Keep the image pane's height in sync with it -
+        // this also fires for CSS-var-driven height changes (the block's height
+        // setting), not just manual drags - and redraw the overlay, since
+        // dragging changes the box size without firing a window resize event,
+        // so the overlay never redrew on drag/release before.
         if (window.ResizeObserver) {
-            const onImagePaneResize = this.debounce(() => {
-                this.textPane.style.height = this.imagePane.clientHeight + 'px';
+            const onTextPaneResize = this.debounce(() => {
+                this.imagePane.style.height = this.textPane.clientHeight + 'px';
                 if (this.pageData.lines) {
                     this.drawOverlays();
                 }
             }, 100);
-            this.resizeObserver = new ResizeObserver(onImagePaneResize);
-            this.resizeObserver.observe(this.imagePane);
+            this.resizeObserver = new ResizeObserver(onTextPaneResize);
+            this.resizeObserver.observe(this.textPane);
         }
 
         this.textPane.addEventListener('mouseenter', this.handleHighlight.bind(this), true);

@@ -20,15 +20,10 @@
     position: relative;
     padding: 10px;
     border-right: 1px solid #ddd;
-    /* A fixed (not max-) height so increasing it actually grows the pane, not
-       just caps it. This is the only pane with the native resize handle -
-       tvwp-viewer.js keeps the text pane's height in sync with it via
-       ResizeObserver, since a flex child's height:100% under a resized flex
-       parent only reliably shrinks, not grows, in practice. */
+    /* Kept in sync with .tvwp-text-pane's actual height by tvwp-viewer.js. */
     height: var(--tvwp-pane-height, 50vh);
     overflow: auto;
     box-sizing: border-box;
-    resize: vertical;
 }
 
 .tvwp-image-wrapper {
@@ -90,10 +85,16 @@
     background: #fff;
     font-family: 'Times New Roman', Times, serif;
     line-height: 1.6;
-    /* Kept in sync with .tvwp-image-pane's actual height by tvwp-viewer.js. */
+    /* A fixed (not max-) height so increasing it actually grows the pane, not
+       just caps it. This is the only pane with the native resize handle - it
+       sits at the outer bottom-right corner of the whole widget here, which
+       is the discoverable spot users expect (the image pane's own corner is
+       just the interior seam between the two panes). tvwp-viewer.js keeps
+       the image pane's height in sync with it via ResizeObserver. */
     height: var(--tvwp-pane-height, 50vh);
     overflow-y: auto;
     box-sizing: border-box;
+    resize: vertical;
 }
 
 .tvwp-text-pane .tvwp-line {
