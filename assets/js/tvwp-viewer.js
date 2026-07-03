@@ -1,7 +1,7 @@
 /**
  * Transcribus Viewer for WordPress
  *
- * @version 1.6.0
+ * @version 1.7.0
  */
 
 // This is the core initialization logic.
@@ -157,6 +157,18 @@ class TVWP_Viewer {
                 this.drawOverlays();
             }
         }, 250));
+
+        // Dragging the pane's native resize handle changes its box size without
+        // firing a window resize event, so the overlay never redrew on drag/release.
+        if (window.ResizeObserver) {
+            const redrawOnResize = this.debounce(() => {
+                if (this.pageData.lines) {
+                    this.drawOverlays();
+                }
+            }, 100);
+            this.resizeObserver = new ResizeObserver(redrawOnResize);
+            this.resizeObserver.observe(this.imagePane);
+        }
 
         this.textPane.addEventListener('mouseenter', this.handleHighlight.bind(this), true);
         this.textPane.addEventListener('mouseleave', this.handleHighlight.bind(this), true);

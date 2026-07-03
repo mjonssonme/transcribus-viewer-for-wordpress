@@ -5,7 +5,7 @@ Author URI: https://mjonsson.me
 Requires at least: 6.6
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.6.1
+Stable tag: 1.7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -29,6 +29,12 @@ The viewer displays the document's description followed by the interactive image
 5.  Navigate to "Transkribus Docs" > "User Guide" for next steps.
 
 == Changelog ==
+
+= 1.7.0 =
+* Feat: The upload page now shows a live progress notice and automatically redirects to the All Documents list once background processing finishes, instead of leaving you on a static "success" message with no feedback.
+* Fix: Resizing the viewer's image/text panes now actually redraws the highlight overlay - previously only a browser window resize triggered a redraw, so dragging the pane's own resize handle left the overlay misaligned (or missing entirely).
+* Fix: The block's "Custom viewer height" setting used `max-height`, which only caps a pane's size, so increasing it past the image's natural height did nothing - only decreasing it worked. It now sets a real fixed height.
+* Fix: The image and text panes each had their own independent drag-resize handle, which could leave them at different heights. There is now a single resize handle for both, and the "Custom viewer height" change now reflects instantly in the block editor preview.
 
 = 1.6.1 =
 * Fix: The "Used In" column only checked published posts, so a document referenced by a draft post showed no warning at all. It now covers any real, non-trashed status (draft/pending/private/future too), with the warning color/wording adjusted based on whether a published post is actually affected.

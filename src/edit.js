@@ -21,6 +21,10 @@ export default function Edit( { attributes, setAttributes } ) {
 	// it directly against our ref instead (works across the iframe boundary since
 	// MutationObserver/querySelectorAll operate per-node, not per-document), with
 	// a short retry loop in case tvwp-viewer.js hasn't finished executing yet.
+	//
+	// The height controls are also applied here directly (not just left to the
+	// server-rendered inline style) so dragging the RangeControl updates the
+	// preview immediately, instead of waiting on ServerSideRender's own re-fetch.
 	useEffect( () => {
 		if ( ! documentId || ! previewRef.current ) {
 			return;
@@ -29,10 +33,23 @@ export default function Edit( { attributes, setAttributes } ) {
 		let cancelled = false;
 		let attempts = 0;
 
+		const applyHeight = () => {
+			const viewerEl = previewRef.current?.querySelector( '.tvwp-viewer' );
+			if ( ! viewerEl ) {
+				return;
+			}
+			if ( customHeight ) {
+				viewerEl.style.setProperty( '--tvwp-pane-height', viewerHeight + 'px' );
+			} else {
+				viewerEl.style.removeProperty( '--tvwp-pane-height' );
+			}
+		};
+
 		const tryInit = () => {
 			if ( cancelled || ! previewRef.current ) {
 				return;
 			}
+			applyHeight();
 			if ( typeof window.initializeViewer !== 'function' ) {
 				if ( attempts++ < 20 ) {
 					setTimeout( tryInit, 150 );
@@ -53,7 +70,7 @@ export default function Edit( { attributes, setAttributes } ) {
 			cancelled = true;
 			observer.disconnect();
 		};
-	}, [ documentId ] );
+	}, [ documentId, customHeight, viewerHeight ] );
 
 	// --- THIS IS THE SIMPLIFIED FIX ---
 	// We simplify the hook to *only* select the posts.

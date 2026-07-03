@@ -139,7 +139,12 @@ class TVWP_Admin_Upload {
             return;
         }
         
-        $this->redirect_with_notice( 'success', 'processing' );
+        $url = add_query_arg(
+            [ 'post_type' => 'transkribus_document', 'page' => 'tvwp-upload', 'tvwp_processing' => $post_id ],
+            admin_url( 'edit.php' )
+        );
+        wp_redirect( $url );
+        exit;
     }
 
     /**
@@ -168,6 +173,11 @@ class TVWP_Admin_Upload {
     }
 
     private function show_admin_notices() {
+        if ( isset( $_GET['tvwp_processing'] ) ) {
+            $this->render_processing_notice( (int) $_GET['tvwp_processing'] );
+            return;
+        }
+
         if ( ! isset( $_GET['tvwp_notice'] ) ) {
             return;
         }
@@ -176,9 +186,7 @@ class TVWP_Admin_Upload {
         $code = $_GET['code'] ?? '';
         $message = '';
 
-        if ( $type === 'success' ) {
-            $message = __( 'File upload successful! The document is now processing in the background. It will be published automatically when complete.', 'tvwp' );
-        } elseif ( $type === 'error' ) {
+        if ( $type === 'error' ) {
             switch ( $code ) {
                 case 'capability': $message = __( 'You do not have permission to upload documents.', 'tvwp' ); break;
                 case 'nonce': $message = __( 'Security check failed. Please try again.', 'tvwp' ); break;
@@ -194,5 +202,70 @@ class TVWP_Admin_Upload {
         if ( $message ) {
             echo "<div class='notice notice-$type is-dismissible'><p>$message</p></div>";
         }
+    }
+
+    /**
+     * Shows a progress notice and polls the document's processing status via REST,
+     * redirecting to the All Documents list as soon as the background job finishes
+     * (published or failed) instead of leaving the admin on a static "success" page.
+     */
+    private function render_processing_notice( $post_id ) {
+        if ( ! $post_id || get_post_type( $post_id ) !== 'transkribus_document' ) {
+            return;
+        }
+
+        $status_url   = esc_url_raw( rest_url( 'tvwp/v1/document/' . $post_id . '/status' ) );
+        $nonce        = wp_create_nonce( 'wp_rest' );
+        $redirect_url = admin_url( 'edit.php?post_type=transkribus_document' );
+        ?>
+        <div class="notice notice-info" id="tvwp-processing-notice">
+            <p>
+                <span class="spinner is-active" style="float:none;vertical-align:middle;margin:0 8px 0 0;"></span>
+                <?php _e( 'Processing your document in the background. You will be redirected automatically when it\'s done - this can take a few minutes for large documents.', 'tvwp' ); ?>
+            </p>
+        </div>
+        <script>
+        ( function() {
+            var statusUrl = <?php echo wp_json_encode( $status_url ); ?>;
+            var nonce = <?php echo wp_json_encode( $nonce ); ?>;
+            var redirectUrl = <?php echo wp_json_encode( $redirect_url ); ?>;
+            var attempts = 0;
+            var maxAttempts = 100; // ~5-8 minutes depending on backoff below
+
+            function poll() {
+                attempts++;
+                fetch( statusUrl, { headers: { 'X-WP-Nonce': nonce } } )
+                    .then( function( response ) { return response.ok ? response.json() : null; } )
+                    .then( function( data ) {
+                        if ( data && data.status && data.status !== 'processing' ) {
+                            window.location.href = redirectUrl;
+                            return;
+                        }
+                        scheduleNext();
+                    } )
+                    .catch( function() {
+                        scheduleNext();
+                    } );
+            }
+
+            function scheduleNext() {
+                if ( attempts >= maxAttempts ) {
+                    var notice = document.getElementById( 'tvwp-processing-notice' );
+                    if ( notice ) {
+                        notice.innerHTML = '<p>' +
+                            <?php echo wp_json_encode( __( 'This is taking longer than expected. You can check back on the', 'tvwp' ) ); ?> +
+                            ' <a href="' + redirectUrl + '">' + <?php echo wp_json_encode( __( 'All Documents', 'tvwp' ) ); ?> + '</a> ' +
+                            <?php echo wp_json_encode( __( 'page later.', 'tvwp' ) ); ?> +
+                            '</p>';
+                    }
+                    return;
+                }
+                setTimeout( poll, 3000 );
+            }
+
+            poll();
+        } )();
+        </script>
+        <?php
     }
 }

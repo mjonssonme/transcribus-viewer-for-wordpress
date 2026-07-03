@@ -10,7 +10,13 @@
     display: flex;
     flex-wrap: wrap; /* Allow stacking on small screens */
     border-top: 1px solid #ddd;
-    /* --- REMOVED HEIGHT LIMITS --- */
+    /* A fixed (not max-) height so increasing it actually grows the panes,
+       not just caps them - and one resize handle here controls both panes
+       at once (each pane fills 100% of this height), instead of each pane
+       having its own independent handle. */
+    height: var(--tvwp-pane-height, 50vh);
+    resize: vertical;
+    overflow: hidden;
 }
 
 /* Image Pane */
@@ -21,14 +27,10 @@
     position: relative;
     padding: 10px;
     border-right: 1px solid #ddd;
-    max-height: var(--tvwp-pane-height, 50vh);
+    height: 100%;
     overflow: auto;
     /* Prevent scrollbars from affecting zoom calculations */
     box-sizing: border-box;
-    /* Native browser resize handle - a low-cost way to let a visitor drag the
-       viewer taller/shorter for their own session, on top of the fixed height
-       a block/shortcode can set via --tvwp-pane-height. */
-    resize: vertical;
 }
 
 .tvwp-image-wrapper {
@@ -90,10 +92,9 @@
     background: #fff;
     font-family: 'Times New Roman', Times, serif;
     line-height: 1.6;
-    /* --- FIX: Added max-height and overflow-y --- */
-    max-height: var(--tvwp-pane-height, 50vh);
+    height: 100%;
     overflow-y: auto;
-    resize: vertical;
+    box-sizing: border-box;
 }
 
 .tvwp-text-pane .tvwp-line {
