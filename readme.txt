@@ -5,7 +5,7 @@ Author URI: https://mjonsson.me
 Requires at least: 6.6
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.7.5
+Stable tag: 1.8.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -29,6 +29,10 @@ The viewer displays the document's description followed by the interactive image
 5.  Navigate to "Transkribus Docs" > "User Guide" for next steps.
 
 == Changelog ==
+
+= 1.8.0 =
+* Feat: The default viewer height now fits the first page's actual image (at its real aspect ratio, plus the pane's own padding/border) instead of an arbitrary fixed guess, so the widget's default size matches the document instead of leaving excess empty space or cutting it off. Only the first page sets this, so paging through a document doesn't keep resizing the widget for each page's aspect ratio.
+* Fix: This also happens to fix a case (visible via DOM inspection) where a freshly-inserted block could end up with a tiny ~44px default height - the previous default relied on reading the container's CSS-computed height, which could race against the block editor's iframe canvas settling its own size. The new default no longer depends on that at all.
 
 = 1.7.5 =
 * Fix: A DOM inspection confirmed the shared container was correctly getting its inline height (500px in the test case) in both the editor and the saved page, but the image/text panes still didn't grow to match - the flexbox `height:100%` stretch this relied on wasn't holding up in practice. `tvwp-viewer.js` now watches the container's real computed height and applies it directly to both panes as an inline style, instead of depending on CSS stretch.

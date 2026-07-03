@@ -1,7 +1,7 @@
 /**
  * Transcribus Viewer for WordPress
  *
- * @version 1.7.5
+ * @version 1.8.0
  */
 
 // This is the core initialization logic.
@@ -107,7 +107,9 @@ class TVWP_Viewer {
         // below then propagates this container's real height to both panes
         // directly (flexbox height:100% stretch proved unreliable here).
         const customHeight = parseInt(this.viewer.dataset.tvwpHeight, 10);
-        if (customHeight > 0) {
+        this.hasCustomHeight = customHeight > 0;
+        this.hasAppliedDefaultHeight = false;
+        if (this.hasCustomHeight) {
             this.mainContent.style.height = customHeight + 'px';
         }
 
@@ -163,6 +165,17 @@ class TVWP_Viewer {
         });
 
         this.image.addEventListener('load', () => {
+            // Size the widget to fit the first page's image by default, rather
+            // than an arbitrary fixed/viewport-relative guess - this is also
+            // more robust than reading the container's CSS-computed height
+            // (which raced against the stylesheet loading in the block editor's
+            // iframe canvas and could lock in a tiny transient size). Only the
+            // very first page sets this, so navigating between pages of
+            // different aspect ratios doesn't keep resizing the widget.
+            if (!this.hasCustomHeight && !this.hasAppliedDefaultHeight) {
+                this.applyDefaultHeightFromImage();
+                this.hasAppliedDefaultHeight = true;
+            }
             this.drawOverlays();
         });
 
@@ -259,6 +272,47 @@ class TVWP_Viewer {
             console.error('TVWP LoadPage Error:', error, this.viewer);
             this.textPane.innerHTML = `<p>Error loading page ${this.currentPage}.</p>`;
         }
+    }
+
+    /**
+     * Sizes the widget to fit the image at its natural aspect ratio (scaled to
+     * the pane's current width) plus whatever padding/border the pane itself
+     * needs, so the default height fits the actual document instead of an
+     * arbitrary guess - and doesn't depend on any CSS height rule having
+     * already taken effect.
+     */
+    applyDefaultHeightFromImage() {
+        const naturalWidth = this.image.naturalWidth;
+        const naturalHeight = this.image.naturalHeight;
+        const displayWidth = this.image.clientWidth;
+
+        if (!naturalWidth || !naturalHeight || !displayWidth) {
+            return;
+        }
+
+        const imageDisplayHeight = (naturalHeight / naturalWidth) * displayWidth;
+        const chrome = this.getPaneChromeHeight();
+        const target = Math.round(imageDisplayHeight + chrome);
+        const clamped = Math.min(Math.max(target, 200), 1400);
+        const height = clamped + 'px';
+
+        this.mainContent.style.height = height;
+        this.imagePane.style.height = height;
+        this.textPane.style.height = height;
+    }
+
+    /**
+     * The vertical padding/border a pane needs around its content, read from
+     * the stylesheet rather than hard-coded so this stays correct if the CSS
+     * changes.
+     */
+    getPaneChromeHeight() {
+        const styles = window.getComputedStyle(this.imagePane);
+        const paddingTop = parseFloat(styles.paddingTop) || 0;
+        const paddingBottom = parseFloat(styles.paddingBottom) || 0;
+        const borderTop = parseFloat(styles.borderTopWidth) || 0;
+        const borderBottom = parseFloat(styles.borderBottomWidth) || 0;
+        return paddingTop + paddingBottom + borderTop + borderBottom;
     }
 
     renderText() {
