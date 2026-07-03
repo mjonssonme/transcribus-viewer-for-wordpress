@@ -57,7 +57,15 @@ export default function Edit( { attributes, setAttributes } ) {
 			}
 			previewRef.current
 				.querySelectorAll( '.tvwp-viewer' )
-				.forEach( window.initializeViewer );
+				.forEach( ( el ) => {
+					// Read by tvwp-viewer.js before it computes a default
+					// height - the editor's narrower canvas makes the
+					// image-fit default (used on the real page) produce a
+					// much taller widget than the document needs, so it
+					// falls back to a short fixed height here instead.
+					el.dataset.tvwpEditorPreview = 'true';
+					window.initializeViewer( el );
+				} );
 		};
 
 		tryInit();

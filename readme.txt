@@ -5,7 +5,7 @@ Author URI: https://mjonsson.me
 Requires at least: 6.6
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.8.5
+Stable tag: 1.8.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -29,6 +29,9 @@ The viewer displays the document's description followed by the interactive image
 5.  Navigate to "Transkribus Docs" > "User Guide" for next steps.
 
 == Changelog ==
+
+= 1.8.6 =
+* Feat: In the block editor preview specifically (default/no-custom-height case), the widget now uses a short fixed default height (500px) instead of fitting to the image. Live testing confirmed the panes were actually rendering correctly all along (verified via dev tools: correctly sized and positioned) - the "broken" appearance was really just the image-fit calculation legitimately producing a very tall widget (~1400px) in the editor's narrower canvas, where the image gets the full canvas width instead of sharing it with the text pane like it does side-by-side on the real page. That made the editor need a lot of scrolling/zooming just to see the whole widget while editing. The real page's default height calculation (image-fit) is unchanged.
 
 = 1.8.5 =
 * Fix: 1.8.4's overflow fix wasn't enough - zooming out to see the whole widget at once (a live test) showed the text pane really was there, stacked below the image, with its own correct height set - but squeezed into a thin sliver instead of its actual height. Root cause: `.tvwp-main-content`'s default `align-content` (`stretch`) splits/compresses its fixed height between the two wrapped rows rather than letting each keep its own natural size - the image (row 1) took nearly all of it, leaving almost nothing for the text pane (row 2). Added `align-content: flex-start`, which lets each wrapped row size itself naturally, with the existing `overflow: auto` handling any excess with a scrollbar instead of squashing content.

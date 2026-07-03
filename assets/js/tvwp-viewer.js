@@ -1,7 +1,7 @@
 /**
  * Transcribus Viewer for WordPress
  *
- * @version 1.8.5
+ * @version 1.8.6
  */
 
 // This is the core initialization logic.
@@ -113,6 +113,16 @@ class TVWP_Viewer {
             this.mainContent.style.height = customHeight + 'px';
         }
 
+        // Set by edit.js before calling initializeViewer(), never present on
+        // the frontend. In the block editor's narrower canvas, the panes
+        // wrap onto separate rows (each has its own min-width), so the image
+        // gets the full canvas width instead of sharing it with the text
+        // pane like it does side-by-side on the real page - fitting the
+        // default height to the image there produces a widget far taller
+        // than the same document ever needs on the frontend. Skip that
+        // calculation here and use a short fixed default instead.
+        this.isEditorPreview = this.viewer.dataset.tvwpEditorPreview === 'true';
+
         this.init();
     }
 
@@ -173,7 +183,11 @@ class TVWP_Viewer {
             // very first page sets this, so navigating between pages of
             // different aspect ratios doesn't keep resizing the widget.
             if (!this.hasCustomHeight && !this.hasAppliedDefaultHeight) {
-                this.applyDefaultHeightFromImage();
+                if (this.isEditorPreview) {
+                    this.applyFixedDefaultHeight();
+                } else {
+                    this.applyDefaultHeightFromImage();
+                }
                 this.hasAppliedDefaultHeight = true;
             }
             this.drawOverlays();
@@ -285,6 +299,20 @@ class TVWP_Viewer {
             console.error('TVWP LoadPage Error:', error, this.viewer);
             this.textPane.innerHTML = `<p>Error loading page ${this.currentPage}.</p>`;
         }
+    }
+
+    /**
+     * Editor-preview-only default (see isEditorPreview above): a short fixed
+     * height rather than fitting the image, since the editor's narrower
+     * canvas gives the image the full width instead of sharing it with the
+     * text pane, which would otherwise produce a widget far taller than the
+     * same document needs on the real page.
+     */
+    applyFixedDefaultHeight() {
+        const height = '500px';
+        this.mainContent.style.height = height;
+        this.imagePane.style.height = height;
+        this.textPane.style.height = height;
     }
 
     /**
