@@ -2,10 +2,10 @@
 Contributors: mattiasjohnsson
 Author: Mattias Johnsson
 Author URI: https://mjonsson.me
-Requires at least: 6.0
-Tested up to: 6.5
+Requires at least: 6.6
+Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.4.0
+Stable tag: 1.4.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -29,6 +29,10 @@ The viewer displays the document's description followed by the interactive image
 5.  Navigate to "Transkribus Docs" > "User Guide" for next steps.
 
 == Changelog ==
+
+= 1.4.1 =
+* Chore: Bumped `@wordpress/scripts` (v27 -> v32) and `@wordpress/server-side-render` to clear most remaining npm audit vulnerabilities in the block editor's build tooling (dev-only, nothing shipped to the live site was affected either way).
+* Compat: The new build's Gutenberg block depends on the `react-jsx-runtime` WordPress script, which core only provides since WP 6.6 - "Requires at least" and "Tested up to" bumped to 6.6 to reflect this. Only affects the block editor insertion experience, not the document viewer itself.
 
 = 1.4.0 =
 * Feat: Added "First" and "Last" page navigation buttons alongside the existing -5/Previous/Next/+5 controls.
