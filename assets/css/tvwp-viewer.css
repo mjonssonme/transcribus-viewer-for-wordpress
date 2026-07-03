@@ -30,6 +30,10 @@
     position: relative;
     padding: 10px;
     border-right: 1px solid #ddd;
+    /* Bottom border makes the pane's real, current extent visible even when
+       its content is shorter than the box (the background alone was too
+       close to the page's own background to tell where it actually ended). */
+    border-bottom: 1px solid #ddd;
     /* Fallback only - see .tvwp-main-content's comment above. */
     height: 500px;
     overflow: auto;
@@ -95,6 +99,8 @@
     background: #fff;
     font-family: 'Times New Roman', Times, serif;
     line-height: 1.6;
+    /* See .tvwp-image-pane's comment above. */
+    border-bottom: 1px solid #ddd;
     /* Fallback only - see .tvwp-main-content's comment above. */
     height: 500px;
     overflow-y: auto;

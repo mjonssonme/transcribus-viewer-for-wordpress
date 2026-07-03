@@ -5,7 +5,7 @@ Author URI: https://mjonsson.me
 Requires at least: 6.6
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.8.1
+Stable tag: 1.8.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -29,6 +29,10 @@ The viewer displays the document's description followed by the interactive image
 5.  Navigate to "Transkribus Docs" > "User Guide" for next steps.
 
 == Changelog ==
+
+= 1.8.2 =
+* Fix: Found the actual root cause behind the whole "height doesn't visibly change" saga - `src/style.scss` (compiled into `build/style-index.css`, registered as the block's own stylesheet in `block.json`) was a long-stale duplicate of the real `assets/css/tvwp-viewer.css`, still carrying old `max-height: 50vh`/`47vh` rules from before any of this work. Because WordPress auto-loads a block's registered stylesheet wherever it renders (including the editor preview), those forgotten rules capped the panes' actual height regardless of any inline height we set via JS - while the outer container (no competing rule there) grew correctly, which is exactly the mismatch that kept getting reported. That stale stylesheet is now emptied out; the real one is the only source of truth.
+* Fix: Added a visible bottom border to both panes, so the widget's actual height is visible even when its content is shorter than the configured height (previously just blank space in a background color too close to the page's own to notice).
 
 = 1.8.1 =
 * Fix: The 1.8.0 image-fit default still showed a tiny ~44px height on a freshly-inserted block - the image's own box hadn't been laid out yet at the exact moment it fired 'load' (seen inside the block editor's iframe canvas), so the size calculation had nothing to measure and silently gave up, leaving a stale/transient reading from the older fallback mechanism to get locked in instead. It now retries across a few animation frames until the image actually has a measurable size, and that older fallback mechanism now refuses to apply any reading that's implausibly small in the first place.
