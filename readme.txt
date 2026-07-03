@@ -5,7 +5,7 @@ Author URI: https://mjonsson.me
 Requires at least: 6.6
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.8.7
+Stable tag: 1.8.8
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -29,6 +29,9 @@ The viewer displays the document's description followed by the interactive image
 5.  Navigate to "Transkribus Docs" > "User Guide" for next steps.
 
 == Changelog ==
+
+= 1.8.8 =
+* Fix: 1.8.7's JS-side self-healing still wasn't enough on a fresh block insertion - tvwp-viewer.js's own default-height retry loop can fire on nearly every animation frame, which can simply out-pace a reactive correction, so the "last write wins" and the tall value could still stick. Fixed this at the root instead of refereeing the JS timing race: the block editor's live preview (ServerSideRender) always renders this block via the block-renderer REST endpoint - a real page render never does. The server now detects that (`REST_REQUEST`) and, without a custom height configured, bakes a short fixed height directly into the server-rendered markup - the exact same mechanism already used reliably for a real configured custom height. tvwp-viewer.js now sees a real height from the moment the element exists, before any script runs, so its image-fit calculation (correct for the real page, far too tall in the editor's narrower canvas) never runs at all in the editor - nothing left to race.
 
 = 1.8.7 =
 * Fix: 1.8.6's short editor-default height was confirmed working on already-saved posts reopened for editing, but a truly fresh block insertion (a brand new, never-saved post) could still show the tall image-fit height. Root cause: tvwp-viewer.js auto-initializes any `.tvwp-viewer` it sees via its own MutationObserver, which can win the race against edit.js setting its "use a short default here" flag on a fresh insert - the one-time init guard then means the flag arrives too late. Compounding this, tvwp-viewer.js's default-height calculation can retry asynchronously if the image isn't measurable on the first try, setting a (tall) height later without adding/removing any child node - invisible to a childList-only mutation watcher. edit.js now also watches for style-attribute changes directly and reapplies its intended height immediately whenever anything changes it, self-healing regardless of which side won the initial race or when the tall value gets set.

@@ -67,6 +67,22 @@ class TVWP_Gutenberg {
 
         $height = ! empty( $attributes['customHeight'] ) ? ( $attributes['viewerHeight'] ?? 0 ) : 0;
 
+        // The block editor's live preview (ServerSideRender) always renders this
+        // block via the block-renderer REST endpoint - a real page render never
+        // does. Without a custom height, bake a short fixed height directly into
+        // the server-rendered markup for that case, rather than trying to detect
+        // "am I in the editor" in JS after the fact: tvwp-viewer.js auto-initializes
+        // any .tvwp-viewer it sees via its own MutationObserver, which could win a
+        // race against a JS-set flag on a fresh block insertion, and its image-fit
+        // default calculation (correct for the real page, but far too tall in the
+        // editor's narrower canvas) can also retry asynchronously, re-triggering
+        // the same race repeatedly. Deciding this here instead means there's no
+        // JS timing to race at all - tvwp-viewer.js sees a real configured height
+        // from the moment the element exists, before any script runs.
+        if ( ! $height && defined( 'REST_REQUEST' ) && REST_REQUEST ) {
+            $height = 500;
+        }
+
         // Re-use our existing shortcode function
         return TVWP_Frontend::get_instance()->render_shortcode( [
             'id'     => $document_id,
