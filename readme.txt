@@ -5,7 +5,7 @@ Author URI: https://mjonsson.me
 Requires at least: 6.6
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.8.9
+Stable tag: 2.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -30,67 +30,12 @@ The viewer displays the document's description followed by the interactive image
 
 == Changelog ==
 
-= 1.8.9 =
-* Fix: The height itself was confirmed correct (the box measured exactly 500x500 via dev tools), yet the whole page still scrolled to show the rest of an oversized image instead of it being contained/scrollable within that box. Checked the computed styles directly: `.tvwp-image-pane`'s own stylesheet rule (including its `overflow: auto`) wasn't matching the element at all inside the block editor's iframe canvas - not overridden, simply absent - even though the same stylesheet is confirmed correct both on disk and as actually served. Root cause: our CSS was enqueued via `enqueue_block_editor_assets`, which only guarantees loading in the top-level admin page - WordPress doesn't reliably mirror assets from that specific hook into the editor's iframed canvas, where the actual block content renders. Switched to `enqueue_block_assets`, the hook WordPress documents as reliably available in both the real page and the editor's iframe.
-
-= 1.8.8 =
-* Fix: 1.8.7's JS-side self-healing still wasn't enough on a fresh block insertion - tvwp-viewer.js's own default-height retry loop can fire on nearly every animation frame, which can simply out-pace a reactive correction, so the "last write wins" and the tall value could still stick. Fixed this at the root instead of refereeing the JS timing race: the block editor's live preview (ServerSideRender) always renders this block via the block-renderer REST endpoint - a real page render never does. The server now detects that (`REST_REQUEST`) and, without a custom height configured, bakes a short fixed height directly into the server-rendered markup - the exact same mechanism already used reliably for a real configured custom height. tvwp-viewer.js now sees a real height from the moment the element exists, before any script runs, so its image-fit calculation (correct for the real page, far too tall in the editor's narrower canvas) never runs at all in the editor - nothing left to race.
-
-= 1.8.7 =
-* Fix: 1.8.6's short editor-default height was confirmed working on already-saved posts reopened for editing, but a truly fresh block insertion (a brand new, never-saved post) could still show the tall image-fit height. Root cause: tvwp-viewer.js auto-initializes any `.tvwp-viewer` it sees via its own MutationObserver, which can win the race against edit.js setting its "use a short default here" flag on a fresh insert - the one-time init guard then means the flag arrives too late. Compounding this, tvwp-viewer.js's default-height calculation can retry asynchronously if the image isn't measurable on the first try, setting a (tall) height later without adding/removing any child node - invisible to a childList-only mutation watcher. edit.js now also watches for style-attribute changes directly and reapplies its intended height immediately whenever anything changes it, self-healing regardless of which side won the initial race or when the tall value gets set.
-
-= 1.8.6 =
-* Feat: In the block editor preview specifically (default/no-custom-height case), the widget now uses a short fixed default height (500px) instead of fitting to the image. Live testing confirmed the panes were actually rendering correctly all along (verified via dev tools: correctly sized and positioned) - the "broken" appearance was really just the image-fit calculation legitimately producing a very tall widget (~1400px) in the editor's narrower canvas, where the image gets the full canvas width instead of sharing it with the text pane like it does side-by-side on the real page. That made the editor need a lot of scrolling/zooming just to see the whole widget while editing. The real page's default height calculation (image-fit) is unchanged.
-
-= 1.8.5 =
-* Fix: 1.8.4's overflow fix wasn't enough - zooming out to see the whole widget at once (a live test) showed the text pane really was there, stacked below the image, with its own correct height set - but squeezed into a thin sliver instead of its actual height. Root cause: `.tvwp-main-content`'s default `align-content` (`stretch`) splits/compresses its fixed height between the two wrapped rows rather than letting each keep its own natural size - the image (row 1) took nearly all of it, leaving almost nothing for the text pane (row 2). Added `align-content: flex-start`, which lets each wrapped row size itself naturally, with the existing `overflow: auto` handling any excess with a scrollbar instead of squashing content.
-
-= 1.8.4 =
-* Fix: On a narrow block editor canvas, the two panes can wrap onto separate rows (each has its own minimum width, so they don't always fit side by side) - but `.tvwp-main-content` had `overflow: hidden` alongside a fixed height, which was silently clipping that second row away entirely. The text pane was still there in the DOM, just completely invisible with no scrollbar or any other indication it existed. Changed to `overflow: auto`, which still satisfies the native resize handle's requirements while making an internal scrollbar appear instead of clipping content out of reach.
-
-= 1.8.3 =
-* Fix: In the block editor preview (default/no-custom-height case only), the panes could end up with an absurd height (visible in DOM inspection as `1.67772e+07px`, i.e. 2^24). Root cause: `edit.js` was resetting the shared container's height to empty on every DOM mutation within the preview - including ones `tvwp-viewer.js` causes itself while drawing the page overlay - which fired moments after `tvwp-viewer.js`'s own image-fit default had just been computed and correctly applied, wiping it back out and forcing a disruptive resize right as the browser was in the middle of laying it out. `edit.js` now only ever sets the container's height when a custom height is actually configured, leaving the computed default alone. Also added a matching upper-bound sanity check next to the existing lower-bound one, so no future variant of this class of bug can silently apply an implausible height again.
-
-= 1.8.2 =
-* Fix: Found the actual root cause behind the whole "height doesn't visibly change" saga - `src/style.scss` (compiled into `build/style-index.css`, registered as the block's own stylesheet in `block.json`) was a long-stale duplicate of the real `assets/css/tvwp-viewer.css`, still carrying old `max-height: 50vh`/`47vh` rules from before any of this work. Because WordPress auto-loads a block's registered stylesheet wherever it renders (including the editor preview), those forgotten rules capped the panes' actual height regardless of any inline height we set via JS - while the outer container (no competing rule there) grew correctly, which is exactly the mismatch that kept getting reported. That stale stylesheet is now emptied out; the real one is the only source of truth.
-* Fix: Added a visible bottom border to both panes, so the widget's actual height is visible even when its content is shorter than the configured height (previously just blank space in a background color too close to the page's own to notice).
-
-= 1.8.1 =
-* Fix: The 1.8.0 image-fit default still showed a tiny ~44px height on a freshly-inserted block - the image's own box hadn't been laid out yet at the exact moment it fired 'load' (seen inside the block editor's iframe canvas), so the size calculation had nothing to measure and silently gave up, leaving a stale/transient reading from the older fallback mechanism to get locked in instead. It now retries across a few animation frames until the image actually has a measurable size, and that older fallback mechanism now refuses to apply any reading that's implausibly small in the first place.
-
-= 1.8.0 =
-* Feat: The default viewer height now fits the first page's actual image (at its real aspect ratio, plus the pane's own padding/border) instead of an arbitrary fixed guess, so the widget's default size matches the document instead of leaving excess empty space or cutting it off. Only the first page sets this, so paging through a document doesn't keep resizing the widget for each page's aspect ratio.
-* Fix: This also happens to fix a case (visible via DOM inspection) where a freshly-inserted block could end up with a tiny ~44px default height - the previous default relied on reading the container's CSS-computed height, which could race against the block editor's iframe canvas settling its own size. The new default no longer depends on that at all.
-
-= 1.7.5 =
-* Fix: A DOM inspection confirmed the shared container was correctly getting its inline height (500px in the test case) in both the editor and the saved page, but the image/text panes still didn't grow to match - the flexbox `height:100%` stretch this relied on wasn't holding up in practice. `tvwp-viewer.js` now watches the container's real computed height and applies it directly to both panes as an inline style, instead of depending on CSS stretch.
-
-= 1.7.4 =
-* Fix: Dragging the resize handle changed the text pane's height but left the image pane frozen at its initial size - the two panes were being kept in sync via JS (one observed, the other copied), which proved unreliable. Simplified to a single source of truth: the shared container around both panes now owns the height (applied as a direct inline style, or via the native resize drag), and both panes simply fill it at 100% - standard flexbox behavior, no more JS syncing between the two panes.
-* Backlog: a "Reset view" button for visitors to clear zoom/pan/resize state back to defaults.
-
-= 1.7.3 =
-* Fix: The custom height still had no visible effect even though the `--tvwp-pane-height` CSS custom property was confirmed present in the DOM - the stylesheet rule consuming it wasn't reliably in effect in every context (notably the block editor's iframe canvas). Height is now applied as a direct inline style on the text pane by `tvwp-viewer.js` instead of through a CSS custom property, which always takes effect regardless of stylesheet load order/caching.
-
-= 1.7.2 =
-* Fix: The resize handle ended up on the image pane's own corner (the interior seam between the two panes), not the outer bottom-right corner of the whole widget where users actually look for it. It's now on the text pane instead, which sits at that outer corner, with the image pane kept in sync.
-* Investigating: a report that the custom height doesn't persist after saving a draft and reloading, even though it updates live while editing - suspect the live-preview JS fix may have been masking a real save/persistence issue rather than the rendering itself.
-
-= 1.7.1 =
-* Fix: The 1.7.0 height fix put the fixed height and resize handle on the wrapping container and relied on the image/text panes stretching to fill it via `height:100%` - that only reliably shrinks, not grows, in real browsers, so the height setting (and drag-resizing) still didn't visibly grow the panes. The height and resize handle now live directly on the image pane, with the text pane's height kept in sync via JS (ResizeObserver) instead of CSS stretching - this reflects both the block's height setting and manual dragging correctly in both directions.
-
-= 1.7.0 =
+= 2.0.0 =
+* Feat: The "Transcribus Document" block has a "Custom viewer height" toggle in its settings, letting you set a fixed pixel height for the image/text panes. Visitors can also drag the bottom-right corner of either pane to resize it themselves, whether or not a custom height is set.
+* Feat: Without a custom height, the viewer's default height fits the first page's actual image (at its real aspect ratio) instead of a fixed guess. In the block editor's own live preview specifically, a short fixed default (500px) is used instead, since the editor's narrower canvas would otherwise make the widget need a lot of scrolling just to see the whole thing while editing.
+* Fix: Resizing the panes (via the drag handle or a custom height change) reliably redraws the text-highlight overlay and keeps both panes and the block editor's preview in sync, including inside the editor's iframed canvas.
 * Feat: The upload page now shows a live progress notice and automatically redirects to the All Documents list once background processing finishes, instead of leaving you on a static "success" message with no feedback.
-* Fix: Resizing the viewer's image/text panes now actually redraws the highlight overlay - previously only a browser window resize triggered a redraw, so dragging the pane's own resize handle left the overlay misaligned (or missing entirely).
-* Fix: The block's "Custom viewer height" setting used `max-height`, which only caps a pane's size, so increasing it past the image's natural height did nothing - only decreasing it worked. It now sets a real fixed height.
-* Fix: The image and text panes each had their own independent drag-resize handle, which could leave them at different heights. There is now a single resize handle for both, and the "Custom viewer height" change now reflects instantly in the block editor preview.
-
-= 1.6.1 =
-* Fix: The "Used In" column only checked published posts, so a document referenced by a draft post showed no warning at all. It now covers any real, non-trashed status (draft/pending/private/future too), with the warning color/wording adjusted based on whether a published post is actually affected.
-
-= 1.6.0 =
-* Feat: The "Transcribus Document" block now has a "Custom viewer height" toggle in its settings panel (below the document selector), letting you set a fixed pixel height for the image/text panes.
-* Feat: Visitors can now drag the bottom-right corner of either pane to resize it themselves, whether or not a custom height is set.
+* Fix: The "Used In" column (on the Transkribus Documents list) now covers documents referenced by any real, non-trashed post status (draft/pending/private/future), not just published ones.
 
 = 1.5.0 =
 * Feat: Deleting a Transkribus document (regardless of its status) now also deletes its attached page images, instead of leaving them behind as orphaned media library entries.
