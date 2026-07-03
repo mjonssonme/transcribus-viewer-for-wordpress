@@ -5,7 +5,7 @@ Author URI: https://mjonsson.me
 Requires at least: 6.6
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.8.4
+Stable tag: 1.8.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -29,6 +29,9 @@ The viewer displays the document's description followed by the interactive image
 5.  Navigate to "Transkribus Docs" > "User Guide" for next steps.
 
 == Changelog ==
+
+= 1.8.5 =
+* Fix: 1.8.4's overflow fix wasn't enough - zooming out to see the whole widget at once (a live test) showed the text pane really was there, stacked below the image, with its own correct height set - but squeezed into a thin sliver instead of its actual height. Root cause: `.tvwp-main-content`'s default `align-content` (`stretch`) splits/compresses its fixed height between the two wrapped rows rather than letting each keep its own natural size - the image (row 1) took nearly all of it, leaving almost nothing for the text pane (row 2). Added `align-content: flex-start`, which lets each wrapped row size itself naturally, with the existing `overflow: auto` handling any excess with a scrollbar instead of squashing content.
 
 = 1.8.4 =
 * Fix: On a narrow block editor canvas, the two panes can wrap onto separate rows (each has its own minimum width, so they don't always fit side by side) - but `.tvwp-main-content` had `overflow: hidden` alongside a fixed height, which was silently clipping that second row away entirely. The text pane was still there in the DOM, just completely invisible with no scrollbar or any other indication it existed. Changed to `overflow: auto`, which still satisfies the native resize handle's requirements while making an internal scrollbar appear instead of clipping content out of reach.

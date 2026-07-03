@@ -29,6 +29,14 @@
        property's requirement (anything but `visible`) while making an
        internal scrollbar appear instead of clipping content out of reach. */
     overflow: auto;
+    /* Without this, the default `stretch` splits/compresses this element's
+       fixed height between the two wrapped rows (confirmed via a live DOM
+       zoom-out: the image took nearly the full height, and the text pane -
+       correctly present with its own full height set - was squeezed into a
+       sliver of what was left over). `flex-start` lets each wrapped row keep
+       its own natural height instead, leaving `overflow: auto` above to
+       handle any excess with a scrollbar rather than squashing content. */
+    align-content: flex-start;
 }
 
 /* Image Pane */
