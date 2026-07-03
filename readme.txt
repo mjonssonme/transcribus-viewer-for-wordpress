@@ -5,7 +5,7 @@ Author URI: https://mjonsson.me
 Requires at least: 6.0
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 1.3.2
+Stable tag: 1.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -29,6 +29,9 @@ The viewer displays the document's description followed by the interactive image
 5.  Navigate to "Transkribus Docs" > "User Guide" for next steps.
 
 == Changelog ==
+
+= 1.4.0 =
+* Feat: Added "First" and "Last" page navigation buttons alongside the existing -5/Previous/Next/+5 controls.
 
 = 1.3.2 =
 * Fix: Draft/unpublished documents can no longer be previewed by the logged-in admin via the viewer - the 1.3.1 REST lockdown was stricter than intended. Unpublished documents are now readable by users who could edit them (matches core WordPress preview behavior), while remaining blocked for anonymous requests.

@@ -1,7 +1,7 @@
 /**
  * Transcribus Viewer for WordPress
  *
- * @version 1.3.2
+ * @version 1.4.0
  */
 
 // This is the core initialization logic.
@@ -132,7 +132,11 @@ class TVWP_Viewer {
             const target = e.target.closest('.tvwp-nav');
             if (!target) return;
             let newPage = this.currentPage;
-            if (target.dataset.navStep) {
+            if (target.dataset.navGoto === 'first') {
+                newPage = 1;
+            } else if (target.dataset.navGoto === 'last') {
+                newPage = this.totalPages;
+            } else if (target.dataset.navStep) {
                 newPage += parseInt(target.dataset.navStep, 10);
             } else if (target.dataset.navSkip) {
                 newPage += parseInt(target.dataset.navSkip, 10);

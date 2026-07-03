@@ -76,6 +76,7 @@ class TVWP_Frontend {
         return sprintf(
             '<div id="tvwp-viewer-%1$d" class="tvwp-viewer" data-post-id="%1$d">
                 <div class="tvwp-controls">
+                    <button class="tvwp-nav" data-nav-goto="first" title="First page">First</button>
                     <button class="tvwp-nav" data-nav-skip="-5" title="5 pages back">-5</button>
                     <button class="tvwp-nav" data-nav-step="-1" title="Previous page">Previous</button>
                     <span class="tvwp-page-display">
@@ -86,6 +87,7 @@ class TVWP_Frontend {
                     </span>
                     <button class="tvwp-nav" data-nav-step="1" title="Next page">Next</button>
                     <button class="tvwp-nav" data-nav-skip="5" title="5 pages forward">+5</button>
+                    <button class="tvwp-nav" data-nav-goto="last" title="Last page">Last</button>
                 </div>
                 <div class="tvwp-main-content">
                     <div class="tvwp-image-pane">
