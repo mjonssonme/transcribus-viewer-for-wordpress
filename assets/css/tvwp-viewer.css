@@ -19,7 +19,16 @@
        iframe's own size settling, and could read a tiny transient value. */
     height: 500px;
     resize: vertical;
-    overflow: hidden;
+    /* auto, not hidden: when the panes wrap onto separate rows (narrow
+       container, e.g. the block editor's canvas - each pane has its own
+       min-width so they can't always sit side by side), the wrapped content
+       needs roughly double this element's own height. With `hidden`, that
+       second row was being silently clipped away entirely (the text pane
+       existed in the DOM but was completely invisible, no scrollbar, nothing
+       to indicate it was there) - `auto` still satisfies the `resize`
+       property's requirement (anything but `visible`) while making an
+       internal scrollbar appear instead of clipping content out of reach. */
+    overflow: auto;
 }
 
 /* Image Pane */

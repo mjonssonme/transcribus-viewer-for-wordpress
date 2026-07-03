@@ -5,7 +5,7 @@ Author URI: https://mjonsson.me
 Requires at least: 6.6
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.8.3
+Stable tag: 1.8.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -29,6 +29,9 @@ The viewer displays the document's description followed by the interactive image
 5.  Navigate to "Transkribus Docs" > "User Guide" for next steps.
 
 == Changelog ==
+
+= 1.8.4 =
+* Fix: On a narrow block editor canvas, the two panes can wrap onto separate rows (each has its own minimum width, so they don't always fit side by side) - but `.tvwp-main-content` had `overflow: hidden` alongside a fixed height, which was silently clipping that second row away entirely. The text pane was still there in the DOM, just completely invisible with no scrollbar or any other indication it existed. Changed to `overflow: auto`, which still satisfies the native resize handle's requirements while making an internal scrollbar appear instead of clipping content out of reach.
 
 = 1.8.3 =
 * Fix: In the block editor preview (default/no-custom-height case only), the panes could end up with an absurd height (visible in DOM inspection as `1.67772e+07px`, i.e. 2^24). Root cause: `edit.js` was resetting the shared container's height to empty on every DOM mutation within the preview - including ones `tvwp-viewer.js` causes itself while drawing the page overlay - which fired moments after `tvwp-viewer.js`'s own image-fit default had just been computed and correctly applied, wiping it back out and forcing a disruptive resize right as the browser was in the middle of laying it out. `edit.js` now only ever sets the container's height when a custom height is actually configured, leaving the computed default alone. Also added a matching upper-bound sanity check next to the existing lower-bound one, so no future variant of this class of bug can silently apply an implausible height again.
