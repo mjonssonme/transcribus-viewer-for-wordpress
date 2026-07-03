@@ -1,7 +1,7 @@
 /**
  * Transcribus Viewer for WordPress
  *
- * @version 1.8.0
+ * @version 1.8.1
  */
 
 // This is the core initialization logic.
@@ -197,7 +197,16 @@ class TVWP_Viewer {
         // resize event.
         if (window.ResizeObserver) {
             const onMainContentResize = this.debounce(() => {
-                const height = this.mainContent.clientHeight + 'px';
+                const observedHeight = this.mainContent.clientHeight;
+                // Guard against a transient/unsettled reading (e.g. taken
+                // before the block editor's iframe canvas or this stylesheet
+                // has actually applied) getting locked in as a real height -
+                // no legitimate configured or image-fitted height is this
+                // small, so skip it and wait for a later, real resize event.
+                if (observedHeight < 100) {
+                    return;
+                }
+                const height = observedHeight + 'px';
                 this.imagePane.style.height = height;
                 this.textPane.style.height = height;
                 if (this.pageData.lines) {
@@ -281,12 +290,21 @@ class TVWP_Viewer {
      * arbitrary guess - and doesn't depend on any CSS height rule having
      * already taken effect.
      */
-    applyDefaultHeightFromImage() {
+    applyDefaultHeightFromImage(attempt = 0) {
         const naturalWidth = this.image.naturalWidth;
         const naturalHeight = this.image.naturalHeight;
         const displayWidth = this.image.clientWidth;
 
         if (!naturalWidth || !naturalHeight || !displayWidth) {
+            // The image's own box may not have been laid out yet (seen inside
+            // the block editor's iframe canvas right after new content is
+            // injected) - retry across a few frames instead of silently
+            // giving up, which left the ResizeObserver fallback in
+            // addEventListeners() to lock in whatever transient size existed
+            // at that moment.
+            if (attempt < 20) {
+                requestAnimationFrame(() => this.applyDefaultHeightFromImage(attempt + 1));
+            }
             return;
         }
 
