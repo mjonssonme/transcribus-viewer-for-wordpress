@@ -5,7 +5,7 @@ Author URI: https://mjonsson.me
 Requires at least: 6.6
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.7.2
+Stable tag: 1.7.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -29,6 +29,9 @@ The viewer displays the document's description followed by the interactive image
 5.  Navigate to "Transkribus Docs" > "User Guide" for next steps.
 
 == Changelog ==
+
+= 1.7.3 =
+* Fix: The custom height still had no visible effect even though the `--tvwp-pane-height` CSS custom property was confirmed present in the DOM - the stylesheet rule consuming it wasn't reliably in effect in every context (notably the block editor's iframe canvas). Height is now applied as a direct inline style on the text pane by `tvwp-viewer.js` instead of through a CSS custom property, which always takes effect regardless of stylesheet load order/caching.
 
 = 1.7.2 =
 * Fix: The resize handle ended up on the image pane's own corner (the interior seam between the two panes), not the outer bottom-right corner of the whole widget where users actually look for it. It's now on the text pane instead, which sits at that outer corner, with the image pane kept in sync.

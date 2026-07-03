@@ -77,12 +77,15 @@ class TVWP_Frontend {
      * @param int $post_id
      * @param int $height_px Optional fixed pane height in pixels. 0 keeps the
      *                        plugin's default (50vh); visitors can still drag the
-     *                        native resize handle either way.
+     *                        native resize handle either way. Applied by
+     *                        tvwp-viewer.js as a direct inline style (not a CSS
+     *                        custom property, which turned out unreliable across
+     *                        the block editor's iframe canvas).
      */
     public static function render_viewer_markup( $post_id, $height_px = 0 ) {
-        $style_attr = '';
+        $height_attr = '';
         if ( $height_px > 0 ) {
-            $style_attr = sprintf( ' style="--tvwp-pane-height:%dpx;"', $height_px );
+            $height_attr = sprintf( ' data-tvwp-height="%d"', $height_px );
         }
 
         return sprintf(
@@ -113,7 +116,7 @@ class TVWP_Frontend {
                 </div>
             </div>',
             esc_attr( $post_id ),
-            $style_attr
+            $height_attr
         );
     }
 }

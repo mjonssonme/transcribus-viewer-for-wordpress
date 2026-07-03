@@ -1,7 +1,7 @@
 /**
  * Transcribus Viewer for WordPress
  *
- * @version 1.7.2
+ * @version 1.7.3
  */
 
 // This is the core initialization logic.
@@ -95,6 +95,16 @@ class TVWP_Viewer {
         if (!this.image || !this.textPane || !this.controls || !this.imagePane || !this.imageWrapper) {
             console.error('TVWP Error: Viewer HTML structure is missing elements.', this.viewer);
             return;
+        }
+
+        // A custom height (set via the block/shortcode) is applied as a direct
+        // inline style here rather than through a CSS custom property, since a
+        // property only takes effect if the stylesheet defining `var(...)` is
+        // actually loaded in that context (unreliable inside the block editor's
+        // iframe canvas) - an inline style always applies regardless.
+        const customHeight = parseInt(this.viewer.dataset.tvwpHeight, 10);
+        if (customHeight > 0) {
+            this.textPane.style.height = customHeight + 'px';
         }
 
         this.init();

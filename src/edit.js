@@ -34,15 +34,14 @@ export default function Edit( { attributes, setAttributes } ) {
 		let attempts = 0;
 
 		const applyHeight = () => {
-			const viewerEl = previewRef.current?.querySelector( '.tvwp-viewer' );
-			if ( ! viewerEl ) {
+			// Set directly on the text pane (not a CSS custom property - that only
+			// takes effect if the stylesheet defining var(...) is loaded in this
+			// context, which isn't reliable inside the editor's iframe canvas).
+			const textPaneEl = previewRef.current?.querySelector( '.tvwp-text-pane' );
+			if ( ! textPaneEl ) {
 				return;
 			}
-			if ( customHeight ) {
-				viewerEl.style.setProperty( '--tvwp-pane-height', viewerHeight + 'px' );
-			} else {
-				viewerEl.style.removeProperty( '--tvwp-pane-height' );
-			}
+			textPaneEl.style.height = customHeight ? viewerHeight + 'px' : '';
 		};
 
 		const tryInit = () => {
