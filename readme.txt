@@ -5,7 +5,7 @@ Author URI: https://mjonsson.me
 Requires at least: 6.6
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.8.2
+Stable tag: 1.8.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -29,6 +29,9 @@ The viewer displays the document's description followed by the interactive image
 5.  Navigate to "Transkribus Docs" > "User Guide" for next steps.
 
 == Changelog ==
+
+= 1.8.3 =
+* Fix: In the block editor preview (default/no-custom-height case only), the panes could end up with an absurd height (visible in DOM inspection as `1.67772e+07px`, i.e. 2^24). Root cause: `edit.js` was resetting the shared container's height to empty on every DOM mutation within the preview - including ones `tvwp-viewer.js` causes itself while drawing the page overlay - which fired moments after `tvwp-viewer.js`'s own image-fit default had just been computed and correctly applied, wiping it back out and forcing a disruptive resize right as the browser was in the middle of laying it out. `edit.js` now only ever sets the container's height when a custom height is actually configured, leaving the computed default alone. Also added a matching upper-bound sanity check next to the existing lower-bound one, so no future variant of this class of bug can silently apply an implausible height again.
 
 = 1.8.2 =
 * Fix: Found the actual root cause behind the whole "height doesn't visibly change" saga - `src/style.scss` (compiled into `build/style-index.css`, registered as the block's own stylesheet in `block.json`) was a long-stale duplicate of the real `assets/css/tvwp-viewer.css`, still carrying old `max-height: 50vh`/`47vh` rules from before any of this work. Because WordPress auto-loads a block's registered stylesheet wherever it renders (including the editor preview), those forgotten rules capped the panes' actual height regardless of any inline height we set via JS - while the outer container (no competing rule there) grew correctly, which is exactly the mismatch that kept getting reported. That stale stylesheet is now emptied out; the real one is the only source of truth.

@@ -1,7 +1,7 @@
 /**
  * Transcribus Viewer for WordPress
  *
- * @version 1.8.2
+ * @version 1.8.3
  */
 
 // This is the core initialization logic.
@@ -201,9 +201,13 @@ class TVWP_Viewer {
                 // Guard against a transient/unsettled reading (e.g. taken
                 // before the block editor's iframe canvas or this stylesheet
                 // has actually applied) getting locked in as a real height -
-                // no legitimate configured or image-fitted height is this
-                // small, so skip it and wait for a later, real resize event.
-                if (observedHeight < 100) {
+                // no legitimate configured or image-fitted height is outside
+                // this range, so skip it and wait for a later, real resize
+                // event. The upper bound guards against a degenerate/sentinel
+                // clientHeight reading (observed as exactly 2^24px) that can
+                // occur mid-reflow if something external resets this
+                // element's height right as it's being observed.
+                if (observedHeight < 100 || observedHeight > 5000) {
                     return;
                 }
                 const height = observedHeight + 'px';

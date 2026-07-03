@@ -21,10 +21,6 @@ export default function Edit( { attributes, setAttributes } ) {
 	// it directly against our ref instead (works across the iframe boundary since
 	// MutationObserver/querySelectorAll operate per-node, not per-document), with
 	// a short retry loop in case tvwp-viewer.js hasn't finished executing yet.
-	//
-	// The height controls are also applied here directly (not just left to the
-	// server-rendered inline style) so dragging the RangeControl updates the
-	// preview immediately, instead of waiting on ServerSideRender's own re-fetch.
 	useEffect( () => {
 		if ( ! documentId || ! previewRef.current ) {
 			return;
@@ -33,24 +29,26 @@ export default function Edit( { attributes, setAttributes } ) {
 		let cancelled = false;
 		let attempts = 0;
 
-		const applyHeight = () => {
-			// Set directly on the shared container (not a CSS custom property -
-			// that only takes effect if the stylesheet defining var(...) is
-			// loaded in this context, which isn't reliable inside the editor's
-			// iframe canvas). Both panes fill it via height:100% in the
-			// stylesheet, so nothing else needs updating here.
-			const mainContentEl = previewRef.current?.querySelector( '.tvwp-main-content' );
-			if ( ! mainContentEl ) {
-				return;
+		// Custom height only: applied once here (not from inside tryInit below)
+		// so dragging the RangeControl updates the preview immediately, instead
+		// of waiting on ServerSideRender's own re-fetch. When there's no custom
+		// height, tvwp-viewer.js's own image-fit default is the only thing that
+		// should ever touch this - it used to be reset to '' here too on every
+		// call, but tryInit re-runs on every DOM mutation within the preview
+		// (including ones tvwp-viewer.js causes itself, like drawOverlays()
+		// adding SVG children on page load), so that reset kept firing moments
+		// after the real default had just been computed and wiping it out.
+		if ( customHeight ) {
+			const mainContentEl = previewRef.current.querySelector( '.tvwp-main-content' );
+			if ( mainContentEl ) {
+				mainContentEl.style.height = viewerHeight + 'px';
 			}
-			mainContentEl.style.height = customHeight ? viewerHeight + 'px' : '';
-		};
+		}
 
 		const tryInit = () => {
 			if ( cancelled || ! previewRef.current ) {
 				return;
 			}
-			applyHeight();
 			if ( typeof window.initializeViewer !== 'function' ) {
 				if ( attempts++ < 20 ) {
 					setTimeout( tryInit, 150 );
