@@ -5,7 +5,7 @@ Author URI: https://mjonsson.me
 Requires at least: 6.6
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.5.0
+Stable tag: 1.6.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -29,6 +29,10 @@ The viewer displays the document's description followed by the interactive image
 5.  Navigate to "Transkribus Docs" > "User Guide" for next steps.
 
 == Changelog ==
+
+= 1.6.0 =
+* Feat: The "Transcribus Document" block now has a "Custom viewer height" toggle in its settings panel (below the document selector), letting you set a fixed pixel height for the image/text panes.
+* Feat: Visitors can now drag the bottom-right corner of either pane to resize it themselves, whether or not a custom height is set.
 
 = 1.5.0 =
 * Feat: Deleting a Transkribus document (regardless of its status) now also deletes its attached page images, instead of leaving them behind as orphaned media library entries.

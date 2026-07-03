@@ -65,9 +65,12 @@ class TVWP_Gutenberg {
             return '<p><em>' . __( 'Please select a document from the block settings.', 'tvwp' ) . '</em></p>';
         }
 
+        $height = ! empty( $attributes['customHeight'] ) ? ( $attributes['viewerHeight'] ?? 0 ) : 0;
+
         // Re-use our existing shortcode function
         return TVWP_Frontend::get_instance()->render_shortcode( [
-            'id' => $document_id,
+            'id'     => $document_id,
+            'height' => $height,
         ] );
     }
 }

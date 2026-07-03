@@ -11,6 +11,14 @@
     "documentId": {
       "type": "number",
       "default": 0
+    },
+    "customHeight": {
+      "type": "boolean",
+      "default": false
+    },
+    "viewerHeight": {
+      "type": "number",
+      "default": 500
     }
   },
   "editorScript": "file:./index.js",

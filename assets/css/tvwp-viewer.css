@@ -21,10 +21,14 @@
     position: relative;
     padding: 10px;
     border-right: 1px solid #ddd;
-    max-height: 50vh;
+    max-height: var(--tvwp-pane-height, 50vh);
     overflow: auto;
     /* Prevent scrollbars from affecting zoom calculations */
     box-sizing: border-box;
+    /* Native browser resize handle - a low-cost way to let a visitor drag the
+       viewer taller/shorter for their own session, on top of the fixed height
+       a block/shortcode can set via --tvwp-pane-height. */
+    resize: vertical;
 }
 
 .tvwp-image-wrapper {
@@ -87,8 +91,9 @@
     font-family: 'Times New Roman', Times, serif;
     line-height: 1.6;
     /* --- FIX: Added max-height and overflow-y --- */
-    max-height: 50vh;
+    max-height: var(--tvwp-pane-height, 50vh);
     overflow-y: auto;
+    resize: vertical;
 }
 
 .tvwp-text-pane .tvwp-line {

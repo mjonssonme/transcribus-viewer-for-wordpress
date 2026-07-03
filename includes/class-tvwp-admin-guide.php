@@ -100,6 +100,7 @@ class TVWP_Admin_Guide {
                 <li>Search for and select the <strong>"Transcribus Document"</strong> block.</li>
                 <li>In the block settings panel on the right, use the dropdown menu to select the document you just published.</li>
                 <li>The viewer will load directly in the editor as a live preview.</li>
+                <li>Optionally, turn on <strong>"Custom viewer height"</strong> in the settings panel to set a fixed height for the image/text panes - otherwise visitors can still drag the bottom-right corner of either pane to resize it themselves.</li>
                 <li>Save or Update your post.</li>
             </ol>
 

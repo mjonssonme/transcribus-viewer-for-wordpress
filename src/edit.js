@@ -1,12 +1,12 @@
 import { __ } from '@wordpress/i18n';
 import { useSelect } from '@wordpress/data';
 import { useBlockProps, InspectorControls } from '@wordpress/block-editor';
-import { PanelBody, SelectControl, Spinner } from '@wordpress/components';
+import { PanelBody, RangeControl, SelectControl, Spinner, ToggleControl } from '@wordpress/components';
 import { useEffect, useMemo, useRef } from '@wordpress/element';
 import ServerSideRender from '@wordpress/server-side-render';
 
 export default function Edit( { attributes, setAttributes } ) {
-	const { documentId } = attributes;
+	const { documentId, customHeight, viewerHeight } = attributes;
 	const previewRef = useRef( null );
 
 	// Stabilize the query object
@@ -96,6 +96,22 @@ export default function Edit( { attributes, setAttributes } ) {
 						}
 						disabled={ ! hasResolved }
 					/>
+					<ToggleControl
+						label={ __( 'Custom viewer height', 'tvwp' ) }
+						help={ __( 'Visitors can also drag the bottom-right corner of the image/text panes to resize them.', 'tvwp' ) }
+						checked={ customHeight }
+						onChange={ ( value ) => setAttributes( { customHeight: value } ) }
+					/>
+					{ customHeight && (
+						<RangeControl
+							label={ __( 'Height (px)', 'tvwp' ) }
+							value={ viewerHeight }
+							onChange={ ( value ) => setAttributes( { viewerHeight: value } ) }
+							min={ 200 }
+							max={ 1200 }
+							step={ 25 }
+						/>
+					) }
 				</PanelBody>
 			</InspectorControls>
 			<div { ...useBlockProps() }>
