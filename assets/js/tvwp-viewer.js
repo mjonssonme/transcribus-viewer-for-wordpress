@@ -1,7 +1,7 @@
 /**
  * Transcribus Viewer for WordPress
  *
- * @version 1.3.0
+ * @version 1.4.0
  */
 
 // This is the core initialization logic.
@@ -10,7 +10,7 @@ function initializeViewer(element) {
     if (element.dataset.initialized) {
         return;
     }
-    
+
     if (element) {
         element.dataset.initialized = 'true';
         new TVWP_Viewer(element);
@@ -24,9 +24,7 @@ function initializeViewer(element) {
 // We wrap it in DOMContentLoaded to make sure the footer script
 // sees the body HTML.
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('TVWP: DOMContentLoaded fired, running initial check.');
     const viewers = document.querySelectorAll('.tvwp-viewer');
-    console.log(`TVWP: Initial check found ${viewers.length} viewer(s).`);
     viewers.forEach(initializeViewer);
 });
 
@@ -39,14 +37,12 @@ const observer = new MutationObserver((mutationsList) => {
                 if (node.nodeType !== 1) return; // Not an element
 
                 if (node.classList && node.classList.contains('tvwp-viewer')) {
-                    console.log('TVWP: MutationObserver found a new viewer.');
                     initializeViewer(node);
                 }
-                
+
                 if (node.querySelector) {
                     const viewers = node.querySelectorAll('.tvwp-viewer');
                     if (viewers.length > 0) {
-                        console.log(`TVWP: MutationObserver found ${viewers.length} nested viewer(s).`);
                         viewers.forEach(initializeViewer);
                     }
                 }
@@ -70,9 +66,8 @@ class TVWP_Viewer {
         this.viewer = element;
         this.postId = this.viewer.dataset.postId;
         this.restUrl = tvwp_data.rest_url;
+        this.nonce = tvwp_data.nonce;
         this.i18n = tvwp_data.i18n;
-
-        console.log(`TVWP: Initializing viewer for Post ID: ${this.postId}`);
 
         this.currentPage = 1;
         this.totalPages = 0;
@@ -107,17 +102,15 @@ class TVWP_Viewer {
 
     async init() {
         this.showLoading(this.textPane);
-        
+
         try {
             const tocUrl = `${this.restUrl}tvwp/v1/document/${this.postId}/toc`;
-            console.log(`TVWP: Fetching TOC: ${tocUrl}`);
-            
-            const tocResponse = await fetch(tocUrl);
+            const tocResponse = await fetch(tocUrl, { headers: { 'X-WP-Nonce': this.nonce } });
             if (!tocResponse.ok) {
                 throw new Error(`Could not load TOC. Server responded ${tocResponse.status}`);
             }
             const tocData = await tocResponse.json();
-            
+
             if (!tocData.page_count) {
                 throw new Error('TOC data is invalid. Page count is 0.');
             }
@@ -139,7 +132,11 @@ class TVWP_Viewer {
             const target = e.target.closest('.tvwp-nav');
             if (!target) return;
             let newPage = this.currentPage;
-            if (target.dataset.navStep) {
+            if (target.dataset.navGoto === 'first') {
+                newPage = 1;
+            } else if (target.dataset.navGoto === 'last') {
+                newPage = this.totalPages;
+            } else if (target.dataset.navStep) {
                 newPage += parseInt(target.dataset.navStep, 10);
             } else if (target.dataset.navSkip) {
                 newPage += parseInt(target.dataset.navSkip, 10);
@@ -178,7 +175,7 @@ class TVWP_Viewer {
         // Click text line to center on image
         this.textPane.addEventListener('click', this.handleTextClick.bind(this));
     }
-    
+
     populateJumpSelect() {
         let options = '';
         for (let i = 1; i <= this.totalPages; i++) {
@@ -207,9 +204,7 @@ class TVWP_Viewer {
 
         try {
             const pageUrl = `${this.restUrl}tvwp/v1/document/${this.postId}/page/${this.currentPage}`;
-            console.log(`TVWP: Fetching Page: ${pageUrl}`);
-
-            const pageResponse = await fetch(pageUrl);
+            const pageResponse = await fetch(pageUrl, { headers: { 'X-WP-Nonce': this.nonce } });
             if (!pageResponse.ok) {
                 throw new Error(`Could not load page data. Server responded ${pageResponse.status}`);
             }
@@ -230,35 +225,41 @@ class TVWP_Viewer {
     }
 
     renderText() {
+        this.textPane.replaceChildren();
         if (!this.pageData.lines) {
-            this.textPane.innerHTML = '';
             return;
         }
-        const html = this.pageData.lines.map(line => 
-            `<span class="tvwp-line" data-line-id="${line.id}">${line.text || '&nbsp;'}</span>`
-        ).join('');
-        this.textPane.innerHTML = html;
+        this.pageData.lines.forEach(line => {
+            const span = document.createElement('span');
+            span.className = 'tvwp-line';
+            span.dataset.lineId = line.id || '';
+            if (line.text) {
+                span.textContent = line.text;
+            } else {
+                span.innerHTML = '&nbsp;';
+            }
+            this.textPane.appendChild(span);
+        });
     }
 
     drawOverlays() {
+        this.svgOverlay.replaceChildren();
         if (!this.pageData.lines) {
-            this.svgOverlay.innerHTML = '';
             return;
         }
 
         const originalWidth = this.pageData.image_width || 0;
         const displayWidth = this.image.clientWidth;
-        
+
         if (originalWidth === 0 || displayWidth === 0) {
             return;
         }
-        
-        const ratio = displayWidth / originalWidth;
 
-        let svgHtml = '';
-        
+        const ratio = displayWidth / originalWidth;
+        const svgNs = 'http://www.w3.org/2000/svg';
+
         this.pageData.lines.forEach(line => {
-            if (!line.coords) return; 
+            if (!line.coords) return;
 
             const scaledPoints = line.coords.split(' ').map(pair => {
                 const [x, y] = pair.split(',');
@@ -267,10 +268,12 @@ class TVWP_Viewer {
                 return `${numX * ratio},${numY * ratio}`;
             }).join(' ');
 
-            svgHtml += `<polygon class="tvwp-line" data-line-id="${line.id}" points="${scaledPoints}" />`;
+            const polygon = document.createElementNS(svgNs, 'polygon');
+            polygon.setAttribute('class', 'tvwp-line');
+            polygon.dataset.lineId = line.id || '';
+            polygon.setAttribute('points', scaledPoints);
+            this.svgOverlay.appendChild(polygon);
         });
-
-        this.svgOverlay.innerHTML = svgHtml;
     }
 
     handleHighlight(e) {

@@ -55,19 +55,28 @@ class TVWP_Rest_Api {
 
     public function get_toc( $request ) {
         $post_id = (int) $request['post_id'];
+
+        if ( ! $this->is_readable( $post_id ) ) {
+            return new WP_Error( 'tvwp_no_toc', 'Document data not found.', [ 'status' => 404 ] );
+        }
+
         $page_count = get_post_meta( $post_id, '_page_count', true );
 
         if ( ! $page_count ) {
             return new WP_Error( 'tvwp_no_toc', 'Document data not found.', [ 'status' => 404 ] );
         }
-        
+
         return new WP_REST_Response( [ 'page_count' => (int) $page_count ], 200 );
     }
 
     public function get_page_data( $request ) {
         $post_id = (int) $request['post_id'];
         $page_num = (int) $request['page_num'];
-        
+
+        if ( ! $this->is_readable( $post_id ) ) {
+            return new WP_Error( 'tvwp_no_page', 'Page data not found.', [ 'status' => 404 ] );
+        }
+
         $page_data = get_post_meta( $post_id, '_page_data_' . $page_num, true );
 
         if ( ! $page_data ) {
@@ -75,5 +84,21 @@ class TVWP_Rest_Api {
         }
 
         return new WP_REST_Response( $page_data, 200 );
+    }
+
+    /**
+     * Published documents are readable by anyone (matches the public frontend/shortcode).
+     * Unpublished documents (draft/processing/failed) are only readable by users who could
+     * also edit the CPT (e.g. previewing before publishing) - never by anonymous requests,
+     * which is what closed the original information-disclosure issue.
+     */
+    private function is_readable( $post_id ) {
+        if ( get_post_type( $post_id ) !== 'transkribus_document' ) {
+            return false;
+        }
+        if ( is_post_publicly_viewable( $post_id ) ) {
+            return true;
+        }
+        return current_user_can( 'read_post', $post_id );
     }
 }

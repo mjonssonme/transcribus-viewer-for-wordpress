@@ -21,33 +21,7 @@ get_header(); ?>
                         <?php the_content(); ?>
                     </div>
                     
-                    <div id="tvwp-viewer-<?php the_ID(); ?>" class="tvwp-viewer" data-post-id="<?php the_ID(); ?>">
-                        
-                        <div class="tvwp-controls">
-                            <button class="tvwp-nav" data-nav-skip="-5" title="5 pages back">-5</button>
-                            <button class="tvwp-nav" data-nav-step="-1" title="Previous page">Previous</button>
-                            <span class="tvwp-page-display">
-                                Page 
-                                <select class="tvwp-nav-jump" title="Jump to page"></select>
-                                of 
-                                <span class="tvwp-total-pages">...</span>
-                            </span>
-                            <button class="tvwp-nav" data-nav-step="1" title="Next page">Next</button>
-                            <button class="tvwp-nav" data-nav-skip="5" title="5 pages forward">+5</button>
-                        </div>
-
-                        <div class="tvwp-main-content">
-                            <div class="tvwp-image-pane">
-                                <div class="tvwp-image-wrapper">
-                                    <img class="tvwp-image" src="" alt="Transcribed page image" />
-                                    <svg class="tvwp-overlay" xmlns="http://www.w3.org/2000/svg"></svg>
-                                </div>
-                            </div>
-                            <div class="tvwp-text-pane">
-                                </div>
-                        </div>
-
-                    </div>
+                    <?php echo TVWP_Frontend::render_viewer_markup( get_the_ID() ); ?>
 
                 </div></article><?php endwhile; // End of the loop. ?>
 

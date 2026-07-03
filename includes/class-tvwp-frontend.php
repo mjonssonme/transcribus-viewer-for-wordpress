@@ -65,19 +65,29 @@ class TVWP_Frontend {
         $doc = get_post( $post_id );
         $description = apply_filters( 'the_content', $doc->post_content );
 
-        $viewer_html = sprintf(
+        return '<div class="tvwp-shortcode-wrapper">' . $description . self::render_viewer_markup( $post_id ) . '</div>';
+    }
+
+    /**
+     * Shared viewer markup, used both by the shortcode/block renderer and the CPT's own
+     * single-document template so the two can't drift out of sync.
+     */
+    public static function render_viewer_markup( $post_id ) {
+        return sprintf(
             '<div id="tvwp-viewer-%1$d" class="tvwp-viewer" data-post-id="%1$d">
                 <div class="tvwp-controls">
+                    <button class="tvwp-nav" data-nav-goto="first" title="First page">First</button>
                     <button class="tvwp-nav" data-nav-skip="-5" title="5 pages back">-5</button>
                     <button class="tvwp-nav" data-nav-step="-1" title="Previous page">Previous</button>
                     <span class="tvwp-page-display">
-                        Page 
+                        Page
                         <select class="tvwp-nav-jump" title="Jump to page"></select>
-                        of 
+                        of
                         <span class="tvwp-total-pages">...</span>
                     </span>
                     <button class="tvwp-nav" data-nav-step="1" title="Next page">Next</button>
                     <button class="tvwp-nav" data-nav-skip="5" title="5 pages forward">+5</button>
+                    <button class="tvwp-nav" data-nav-goto="last" title="Last page">Last</button>
                 </div>
                 <div class="tvwp-main-content">
                     <div class="tvwp-image-pane">
@@ -92,7 +102,5 @@ class TVWP_Frontend {
             </div>',
             esc_attr( $post_id )
         );
-
-        return '<div class="tvwp-shortcode-wrapper">' . $description . $viewer_html . '</div>';
     }
 }
