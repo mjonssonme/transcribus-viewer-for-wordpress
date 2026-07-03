@@ -21,6 +21,16 @@ class TVWP_CPT {
 
     private function __construct() {
         add_action( 'init', [ $this, 'register_cpt' ] );
+        add_action( 'admin_menu', [ $this, 'remove_add_new_submenu' ], 999 );
+    }
+
+    /**
+     * The ZIP upload flow is the only supported way to create a Transkribus
+     * document - a manually created blank post via "Add New" has no page data
+     * attached and would just be confusing, so hide that default submenu item.
+     */
+    public function remove_add_new_submenu() {
+        remove_submenu_page( 'edit.php?post_type=transkribus_document', 'post-new.php?post_type=transkribus_document' );
     }
 
     public function register_cpt() {

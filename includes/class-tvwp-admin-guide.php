@@ -76,13 +76,12 @@ class TVWP_Admin_Guide {
             
             <hr>
 
-            <h2>Step 3: Publish Your Document</h2>
+            <h2>Step 3: Your Document Is Published Automatically</h2>
             <ol>
                 <li>Go to <strong>Transkribus Docs &gt; All Documents</strong>.</li>
-                <li>After a minute, you will see your new document appear with the correct title, saved as a <strong>"Draft"</strong>.</li>
-                <li>Click "Edit" on the new document.</li>
-                <li>The main text editor will be <strong>pre-filled with the document description</strong> from your Transkribus metadata. You can edit this text or add your own introduction.</li>
-                <li>When you are ready, click the "Publish" button.</li>
+                <li>After a minute, you will see your new document appear with the correct title, already <strong>Published</strong> and live.</li>
+                <li>Click "Edit" on the document if you want to review or change anything.</li>
+                <li>The main text editor will be <strong>pre-filled with the document description</strong> from your Transkribus metadata. You can edit this text or add your own introduction - just click "Update" to save changes.</li>
             </ol>
 
             <hr>

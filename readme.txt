@@ -5,7 +5,7 @@ Author URI: https://mjonsson.me
 Requires at least: 6.6
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.4.1
+Stable tag: 1.4.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -29,6 +29,11 @@ The viewer displays the document's description followed by the interactive image
 5.  Navigate to "Transkribus Docs" > "User Guide" for next steps.
 
 == Changelog ==
+
+= 1.4.2 =
+* Feat: Documents are now published automatically as soon as processing finishes, instead of being left in Draft waiting for a manual "Publish" click. You can still edit the auto-imported description afterward.
+* Fix: The Gutenberg block's live preview now actually renders inside the block editor (image/text/controls), instead of showing an empty shell until you hit Preview - the editor's iframed canvas meant the viewer script was watching the wrong document.
+* UX: Removed the default "Add New" submenu under Transkribus Docs - documents can only be created via ZIP upload, so that entry just led to a confusing blank post.
 
 = 1.4.1 =
 * Chore: Bumped `@wordpress/scripts` (v27 -> v32) and `@wordpress/server-side-render` to clear most remaining npm audit vulnerabilities in the block editor's build tooling (dev-only, nothing shipped to the live site was affected either way).

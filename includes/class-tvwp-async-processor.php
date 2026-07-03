@@ -179,7 +179,7 @@ class TVWP_Async_Processor {
                 'ID'           => $post_id,
                 'post_title'   => $doc_title,
                 'post_name'    => sanitize_title( $doc_title ),
-                'post_status'  => 'draft',
+                'post_status'  => 'publish',
                 'post_content' => $doc_description, // <-- V1.0.1 FEATURE IS HERE
             ] );
             

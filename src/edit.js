@@ -2,18 +2,59 @@ import { __ } from '@wordpress/i18n';
 import { useSelect } from '@wordpress/data';
 import { useBlockProps, InspectorControls } from '@wordpress/block-editor';
 import { PanelBody, SelectControl, Spinner } from '@wordpress/components';
-import { useMemo } from '@wordpress/element';
+import { useEffect, useMemo, useRef } from '@wordpress/element';
 import ServerSideRender from '@wordpress/server-side-render';
 
 export default function Edit( { attributes, setAttributes } ) {
 	const { documentId } = attributes;
+	const previewRef = useRef( null );
 
 	// Stabilize the query object
 	const query = useMemo( () => ( {
 		per_page: -1,
 		status: 'publish', // Only show published documents
 	} ), [] );
-	
+
+	// The block editor's canvas renders inside an iframe, but tvwp-viewer.js's own
+	// DOMContentLoaded/MutationObserver logic only watches the top-level document,
+	// so it never sees ServerSideRender's output and the preview stays blank. Init
+	// it directly against our ref instead (works across the iframe boundary since
+	// MutationObserver/querySelectorAll operate per-node, not per-document), with
+	// a short retry loop in case tvwp-viewer.js hasn't finished executing yet.
+	useEffect( () => {
+		if ( ! documentId || ! previewRef.current ) {
+			return;
+		}
+
+		let cancelled = false;
+		let attempts = 0;
+
+		const tryInit = () => {
+			if ( cancelled || ! previewRef.current ) {
+				return;
+			}
+			if ( typeof window.initializeViewer !== 'function' ) {
+				if ( attempts++ < 20 ) {
+					setTimeout( tryInit, 150 );
+				}
+				return;
+			}
+			previewRef.current
+				.querySelectorAll( '.tvwp-viewer' )
+				.forEach( window.initializeViewer );
+		};
+
+		tryInit();
+
+		const observer = new MutationObserver( tryInit );
+		observer.observe( previewRef.current, { childList: true, subtree: true } );
+
+		return () => {
+			cancelled = true;
+			observer.disconnect();
+		};
+	}, [ documentId ] );
+
 	// --- THIS IS THE SIMPLIFIED FIX ---
 	// We simplify the hook to *only* select the posts.
 	const posts = useSelect(
@@ -71,10 +112,12 @@ export default function Edit( { attributes, setAttributes } ) {
 
                 { /* Show the live preview if everything is good */ }
 				{ documentId > 0 && (
-					<ServerSideRender
-						block="tvwp/document-viewer"
-						attributes={ attributes }
-					/>
+					<div ref={ previewRef }>
+						<ServerSideRender
+							block="tvwp/document-viewer"
+							attributes={ attributes }
+						/>
+					</div>
 				) }
 			</div>
 		</>
