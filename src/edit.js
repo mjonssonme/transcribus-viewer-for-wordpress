@@ -34,14 +34,16 @@ export default function Edit( { attributes, setAttributes } ) {
 		let attempts = 0;
 
 		const applyHeight = () => {
-			// Set directly on the text pane (not a CSS custom property - that only
-			// takes effect if the stylesheet defining var(...) is loaded in this
-			// context, which isn't reliable inside the editor's iframe canvas).
-			const textPaneEl = previewRef.current?.querySelector( '.tvwp-text-pane' );
-			if ( ! textPaneEl ) {
+			// Set directly on the shared container (not a CSS custom property -
+			// that only takes effect if the stylesheet defining var(...) is
+			// loaded in this context, which isn't reliable inside the editor's
+			// iframe canvas). Both panes fill it via height:100% in the
+			// stylesheet, so nothing else needs updating here.
+			const mainContentEl = previewRef.current?.querySelector( '.tvwp-main-content' );
+			if ( ! mainContentEl ) {
 				return;
 			}
-			textPaneEl.style.height = customHeight ? viewerHeight + 'px' : '';
+			mainContentEl.style.height = customHeight ? viewerHeight + 'px' : '';
 		};
 
 		const tryInit = () => {

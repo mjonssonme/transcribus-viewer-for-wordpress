@@ -5,7 +5,7 @@ Author URI: https://mjonsson.me
 Requires at least: 6.6
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.7.3
+Stable tag: 1.7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -29,6 +29,10 @@ The viewer displays the document's description followed by the interactive image
 5.  Navigate to "Transkribus Docs" > "User Guide" for next steps.
 
 == Changelog ==
+
+= 1.7.4 =
+* Fix: Dragging the resize handle changed the text pane's height but left the image pane frozen at its initial size - the two panes were being kept in sync via JS (one observed, the other copied), which proved unreliable. Simplified to a single source of truth: the shared container around both panes now owns the height (applied as a direct inline style, or via the native resize drag), and both panes simply fill it at 100% - standard flexbox behavior, no more JS syncing between the two panes.
+* Backlog: a "Reset view" button for visitors to clear zoom/pan/resize state back to defaults.
 
 = 1.7.3 =
 * Fix: The custom height still had no visible effect even though the `--tvwp-pane-height` CSS custom property was confirmed present in the DOM - the stylesheet rule consuming it wasn't reliably in effect in every context (notably the block editor's iframe canvas). Height is now applied as a direct inline style on the text pane by `tvwp-viewer.js` instead of through a CSS custom property, which always takes effect regardless of stylesheet load order/caching.

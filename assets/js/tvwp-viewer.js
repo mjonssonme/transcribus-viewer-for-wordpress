@@ -1,7 +1,7 @@
 /**
  * Transcribus Viewer for WordPress
  *
- * @version 1.7.3
+ * @version 1.7.4
  */
 
 // This is the core initialization logic.
@@ -81,6 +81,7 @@ class TVWP_Viewer {
         this.totalPagesSpan = this.viewer.querySelector('.tvwp-total-pages');
         this.imagePane = this.viewer.querySelector('.tvwp-image-pane');
         this.imageWrapper = this.viewer.querySelector('.tvwp-image-wrapper');
+        this.mainContent = this.viewer.querySelector('.tvwp-main-content');
 
         // Zoom and pan state
         this.zoom = 1;
@@ -92,19 +93,21 @@ class TVWP_Viewer {
         this.startPanX = 0;
         this.startPanY = 0;
 
-        if (!this.image || !this.textPane || !this.controls || !this.imagePane || !this.imageWrapper) {
+        if (!this.image || !this.textPane || !this.controls || !this.imagePane || !this.imageWrapper || !this.mainContent) {
             console.error('TVWP Error: Viewer HTML structure is missing elements.', this.viewer);
             return;
         }
 
         // A custom height (set via the block/shortcode) is applied as a direct
-        // inline style here rather than through a CSS custom property, since a
-        // property only takes effect if the stylesheet defining `var(...)` is
-        // actually loaded in that context (unreliable inside the block editor's
-        // iframe canvas) - an inline style always applies regardless.
+        // inline style on the shared container here rather than through a CSS
+        // custom property, since a property only takes effect if the stylesheet
+        // defining `var(...)` is actually loaded in that context (unreliable
+        // inside the block editor's iframe canvas) - an inline style always
+        // applies regardless. Both panes fill it via height:100% in the
+        // stylesheet, so they don't need any JS-side syncing with each other.
         const customHeight = parseInt(this.viewer.dataset.tvwpHeight, 10);
         if (customHeight > 0) {
-            this.textPane.style.height = customHeight + 'px';
+            this.mainContent.style.height = customHeight + 'px';
         }
 
         this.init();
@@ -168,22 +171,21 @@ class TVWP_Viewer {
             }
         }, 250));
 
-        // Only the text pane has the native resize handle (one handle for both
-        // panes, at the outer bottom-right corner of the widget, instead of each
-        // pane having its own). Keep the image pane's height in sync with it -
-        // this also fires for CSS-var-driven height changes (the block's height
-        // setting), not just manual drags - and redraw the overlay, since
-        // dragging changes the box size without firing a window resize event,
-        // so the overlay never redrew on drag/release before.
+        // The resize handle lives on .tvwp-main-content (the single shared
+        // container, at the widget's actual outer bottom-right corner) - both
+        // panes just fill it via height:100% in the stylesheet, no per-pane JS
+        // syncing needed. Dragging it doesn't fire a window resize event, so
+        // redraw the overlay directly on it (a vertical-only resize doesn't
+        // actually change the image's width/scale, but this is a safe no-op
+        // in that case and covers window resizes that also affect it).
         if (window.ResizeObserver) {
-            const onTextPaneResize = this.debounce(() => {
-                this.imagePane.style.height = this.textPane.clientHeight + 'px';
+            const onResize = this.debounce(() => {
                 if (this.pageData.lines) {
                     this.drawOverlays();
                 }
             }, 100);
-            this.resizeObserver = new ResizeObserver(onTextPaneResize);
-            this.resizeObserver.observe(this.textPane);
+            this.resizeObserver = new ResizeObserver(onResize);
+            this.resizeObserver.observe(this.mainContent);
         }
 
         this.textPane.addEventListener('mouseenter', this.handleHighlight.bind(this), true);
