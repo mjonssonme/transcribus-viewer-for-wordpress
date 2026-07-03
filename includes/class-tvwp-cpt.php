@@ -70,8 +70,8 @@ class TVWP_CPT {
 
     /**
      * Adds a "Used In" column to the Transkribus Documents list table, so an admin
-     * can see - before deleting a document - whether any published post/page still
-     * embeds it via the block or the shortcode.
+     * can see - before deleting a document - whether any post/page (published or
+     * not) still embeds it via the block or the shortcode.
      */
     public function add_usage_column( $columns ) {
         $columns['tvwp_usage'] = __( 'Used In', 'tvwp' );
@@ -91,21 +91,34 @@ class TVWP_CPT {
         }
 
         $links = [];
+        $has_published_usage = false;
         foreach ( $using_post_ids as $using_post_id ) {
-            $links[] = '<a href="' . esc_url( get_edit_post_link( $using_post_id ) ) . '">' . esc_html( get_the_title( $using_post_id ) ) . '</a>';
+            $status = get_post_status( $using_post_id );
+            if ( $status === 'publish' ) {
+                $has_published_usage = true;
+            }
+            $label = esc_html( get_the_title( $using_post_id ) );
+            if ( $status !== 'publish' ) {
+                $status_obj = get_post_status_object( $status );
+                $label .= ' (' . esc_html( $status_obj ? $status_obj->label : $status ) . ')';
+            }
+            $links[] = '<a href="' . esc_url( get_edit_post_link( $using_post_id ) ) . '">' . $label . '</a>';
         }
 
         printf(
-            '<span style="color:#d63638;font-weight:600;" title="%s">&#9888; %s</span>',
-            esc_attr__( 'Deleting this document will break these published posts.', 'tvwp' ),
+            '<span style="color:%s;font-weight:600;" title="%s">&#9888; %s</span>',
+            $has_published_usage ? '#d63638' : '#996800',
+            $has_published_usage
+                ? esc_attr__( 'Deleting this document will break these published posts.', 'tvwp' )
+                : esc_attr__( 'This document is referenced by unpublished posts - deleting it will break them once published.', 'tvwp' ),
             implode( ', ', $links )
         );
     }
 
     /**
-     * Scans published posts for the tvwp/document-viewer block or the
-     * [transkribus_viewer] shortcode, mapping each referenced document ID to the
-     * posts that use it. Computed once per request and cached.
+     * Scans posts (any real, non-trashed status) for the tvwp/document-viewer block
+     * or the [transkribus_viewer] shortcode, mapping each referenced document ID to
+     * the posts that use it. Computed once per request and cached.
      */
     private function get_usage_map() {
         if ( $this->usage_map !== null ) {
@@ -118,7 +131,7 @@ class TVWP_CPT {
 
         $candidates = $wpdb->get_results(
             "SELECT ID, post_content FROM {$wpdb->posts}
-             WHERE post_status = 'publish'
+             WHERE post_status IN ( 'publish', 'draft', 'pending', 'private', 'future' )
              AND ( post_content LIKE '%tvwp/document-viewer%' OR post_content LIKE '%transkribus_viewer%' )"
         );
 
