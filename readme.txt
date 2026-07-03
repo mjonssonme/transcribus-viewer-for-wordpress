@@ -5,7 +5,7 @@ Author URI: https://mjonsson.me
 Requires at least: 6.6
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.8.8
+Stable tag: 1.8.9
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -29,6 +29,9 @@ The viewer displays the document's description followed by the interactive image
 5.  Navigate to "Transkribus Docs" > "User Guide" for next steps.
 
 == Changelog ==
+
+= 1.8.9 =
+* Fix: The height itself was confirmed correct (the box measured exactly 500x500 via dev tools), yet the whole page still scrolled to show the rest of an oversized image instead of it being contained/scrollable within that box. Checked the computed styles directly: `.tvwp-image-pane`'s own stylesheet rule (including its `overflow: auto`) wasn't matching the element at all inside the block editor's iframe canvas - not overridden, simply absent - even though the same stylesheet is confirmed correct both on disk and as actually served. Root cause: our CSS was enqueued via `enqueue_block_editor_assets`, which only guarantees loading in the top-level admin page - WordPress doesn't reliably mirror assets from that specific hook into the editor's iframed canvas, where the actual block content renders. Switched to `enqueue_block_assets`, the hook WordPress documents as reliably available in both the real page and the editor's iframe.
 
 = 1.8.8 =
 * Fix: 1.8.7's JS-side self-healing still wasn't enough on a fresh block insertion - tvwp-viewer.js's own default-height retry loop can fire on nearly every animation frame, which can simply out-pace a reactive correction, so the "last write wins" and the tall value could still stick. Fixed this at the root instead of refereeing the JS timing race: the block editor's live preview (ServerSideRender) always renders this block via the block-renderer REST endpoint - a real page render never does. The server now detects that (`REST_REQUEST`) and, without a custom height configured, bakes a short fixed height directly into the server-rendered markup - the exact same mechanism already used reliably for a real configured custom height. tvwp-viewer.js now sees a real height from the moment the element exists, before any script runs, so its image-fit calculation (correct for the real page, far too tall in the editor's narrower canvas) never runs at all in the editor - nothing left to race.

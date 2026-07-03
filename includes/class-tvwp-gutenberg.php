@@ -21,17 +21,33 @@ class TVWP_Gutenberg {
 
     private function __construct() {
         add_action( 'init', [ $this, 'register_blocks' ] );
-        add_action( 'enqueue_block_editor_assets', [ $this, 'enqueue_editor_assets' ] );
+        // enqueue_block_assets (not enqueue_block_editor_assets) specifically:
+        // this is the hook the block editor actually mirrors into its iframed
+        // canvas reliably - enqueue_block_editor_assets only guarantees the
+        // asset loads in the top-level admin page. Confirmed via a live DOM
+        // check that our stylesheet's rules weren't matching anything inside
+        // the iframe at all (not overridden - simply absent), while
+        // tvwp-viewer.js still ran fine (its own <script> tag isn't
+        // iframe-scoped the same way a stylesheet's cascade is).
+        add_action( 'enqueue_block_assets', [ $this, 'enqueue_editor_assets' ] );
     }
 
     /**
      * V1.2.1: Load our viewer's JS and CSS inside the block editor
      */
     public function enqueue_editor_assets() {
+        // enqueue_block_assets also fires on the real frontend, where
+        // TVWP_Frontend already enqueues these assets itself, conditionally,
+        // only on pages that actually use the block/shortcode - avoid
+        // enqueuing them unconditionally on every frontend page view here too.
+        if ( ! is_admin() ) {
+            return;
+        }
+
         // --- THIS IS THE FIX ---
         // We only want to load our viewer script on "Pages" or "Posts",
         // NOT on our CPT's own edit screen, as it causes a conflict.
-        
+
         $screen = get_current_screen();
         if ( ! $screen || $screen->base !== 'post' ) {
             return;
