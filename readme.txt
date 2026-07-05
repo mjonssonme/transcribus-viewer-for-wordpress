@@ -28,6 +28,10 @@ The viewer displays the document's description followed by the interactive image
 4.  Activate the plugin through the 'Plugins' menu in WordPress.
 5.  Navigate to "Transkribus Docs" > "User Guide" for next steps.
 
+== Screenshots ==
+
+1. The Transcribus Document viewer, shown live in the WordPress block editor, with an interactive image/text pane side-by-side and page navigation controls. See `.github/screenshots/viewer-preview.png` (or the repo's `README.md` on GitHub, where it's shown inline).
+
 == Changelog ==
 
 = 2.1.0 =
