@@ -103,6 +103,7 @@ class TVWP_Frontend {
                     <button class="tvwp-nav" data-nav-step="1" title="Next page">Next</button>
                     <button class="tvwp-nav" data-nav-skip="5" title="5 pages forward">+5</button>
                     <button class="tvwp-nav" data-nav-goto="last" title="Last page">Last</button>
+                    <button class="tvwp-nav" data-nav-reset="true" title="Reset zoom, pan, and size back to default">Reset view</button>
                 </div>
                 <div class="tvwp-main-content">
                     <div class="tvwp-image-pane">
