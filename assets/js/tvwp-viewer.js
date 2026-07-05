@@ -1,7 +1,7 @@
 /**
  * Transcribus Viewer for WordPress
  *
- * @version 2.0.0
+ * @version 2.1.0
  */
 
 // This is the core initialization logic.
@@ -106,11 +106,11 @@ class TVWP_Viewer {
         // applies regardless. The ResizeObserver set up in addEventListeners()
         // below then propagates this container's real height to both panes
         // directly (flexbox height:100% stretch proved unreliable here).
-        const customHeight = parseInt(this.viewer.dataset.tvwpHeight, 10);
-        this.hasCustomHeight = customHeight > 0;
+        this.customHeight = parseInt(this.viewer.dataset.tvwpHeight, 10);
+        this.hasCustomHeight = this.customHeight > 0;
         this.hasAppliedDefaultHeight = false;
         if (this.hasCustomHeight) {
-            this.mainContent.style.height = customHeight + 'px';
+            this.mainContent.style.height = this.customHeight + 'px';
         }
 
         // Set by edit.js before calling initializeViewer(), never present on
@@ -157,6 +157,12 @@ class TVWP_Viewer {
         this.controls.addEventListener('click', (e) => {
             const target = e.target.closest('.tvwp-nav');
             if (!target) return;
+
+            if (target.dataset.navReset) {
+                this.resetView();
+                return;
+            }
+
             let newPage = this.currentPage;
             if (target.dataset.navGoto === 'first') {
                 newPage = 1;
@@ -298,6 +304,31 @@ class TVWP_Viewer {
         } catch (error) {
             console.error('TVWP LoadPage Error:', error, this.viewer);
             this.textPane.innerHTML = `<p>Error loading page ${this.currentPage}.</p>`;
+        }
+    }
+
+    /**
+     * Clears zoom/pan and any manual pane resize (drag handle) back to
+     * whatever the widget started at - a configured custom height if there
+     * is one, otherwise the same default this.applyFixedDefaultHeight()/
+     * applyDefaultHeightFromImage() computed on load.
+     */
+    resetView() {
+        this.zoom = 1;
+        this.panX = 0;
+        this.panY = 0;
+        this.updateTransform();
+
+        if (this.hasCustomHeight) {
+            this.mainContent.style.height = this.customHeight + 'px';
+        } else if (this.isEditorPreview) {
+            this.applyFixedDefaultHeight();
+        } else {
+            this.applyDefaultHeightFromImage();
+        }
+
+        if (this.pageData.lines) {
+            this.drawOverlays();
         }
     }
 

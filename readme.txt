@@ -5,7 +5,7 @@ Author URI: https://mjonsson.me
 Requires at least: 6.6
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 2.0.0
+Stable tag: 2.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -29,6 +29,9 @@ The viewer displays the document's description followed by the interactive image
 5.  Navigate to "Transkribus Docs" > "User Guide" for next steps.
 
 == Changelog ==
+
+= 2.1.0 =
+* Feat: Added a "Reset view" button to the viewer controls, letting visitors clear zoom/pan and any manual pane resize back to the widget's starting state (a configured custom height, or the same default it loaded with) in one click.
 
 = 2.0.0 =
 * Feat: The "Transcribus Document" block has a "Custom viewer height" toggle in its settings, letting you set a fixed pixel height for the image/text panes. Visitors can also drag the bottom-right corner of either pane to resize it themselves, whether or not a custom height is set.
