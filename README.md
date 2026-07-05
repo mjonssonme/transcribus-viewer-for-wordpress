@@ -9,16 +9,19 @@ This plugin provides a full-featured system for importing Transkribus documents 
 
 The viewer displays the document's description followed by the interactive image and text panes, kept in sync as you navigate, zoom, pan, or resize.
 
+**[Download the latest release (.zip)](https://github.com/mjonssonme/transcribus-viewer-for-wordpress/releases/latest)**
+
 ## This is what you get
 
 ![The Transcribus Document viewer, shown live in the WordPress block editor, with an interactive image/text pane side-by-side and page navigation controls](.github/screenshots/viewer-preview.png)
 
 ## Installation
 
-1. Upload the `transcribus-viewer-for-wordpress` folder to your `/wp-content/plugins/` directory.
+1. Download the [latest release](https://github.com/mjonssonme/transcribus-viewer-for-wordpress/releases/latest) and upload the zip via Plugins > Add New > Upload Plugin (or unzip it into `/wp-content/plugins/` directly).
 2. Install the 'Action Scheduler' library in `/includes/lib/`.
-3. In the plugin's root folder, run `npm install` and then `npm run build` to build the Gutenberg block assets.
-4. Activate the plugin through the 'Plugins' menu in WordPress.
-5. Navigate to "Transkribus Docs" > "User Guide" for next steps.
+3. Activate the plugin through the 'Plugins' menu in WordPress.
+4. Navigate to "Transkribus Docs" > "User Guide" for next steps.
+
+Building from source instead? Clone the repo, run `npm install` and `npm run build` to build the Gutenberg block assets, then follow the same steps above.
 
 See [`readme.txt`](readme.txt) for the full changelog and WordPress.org-style plugin metadata.
